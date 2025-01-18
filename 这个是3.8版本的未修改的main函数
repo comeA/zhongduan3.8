@@ -1,9 +1,12 @@
-# Excel_处理终端数据 V3.8/main.py
 import os
 import pandas as pd
-from modules import excel_utils, business_number_utils, sn_data_process, vlookup_module, insert_columns, utils
+from modules.sn_data_process import process_sn_data, sort_and_save_sn_data
+from modules.vlookup_module import perform_vlookup_correct
+from modules.insert_columns import insert_columns
+from modules.excel_utils import copy_data_to_excel # 导入新的模块
+from modules.business_number_utils import copy_business_numbers_to_template # 导入新的模块
+from modules import utils
 
-# 使用更简洁的导入方式，直接将函数名导入到当前命名空间
 get_sheet_name = utils.get_sheet_name
 get_file_path = utils.get_file_path
 get_file_name = utils.get_file_name
@@ -11,38 +14,6 @@ get_yn_input = utils.get_yn_input
 create_directory = utils.create_directory
 check_file_exists = utils.check_file_exists
 check_excel_file = utils.check_excel_file
-
-copy_data_to_excel = excel_utils.copy_data_to_excel
-copy_business_numbers_to_template = business_number_utils.copy_business_numbers_to_template
-process_sn_data = sn_data_process.process_sn_data
-sort_and_save_sn_data = sn_data_process.sort_and_save_sn_data
-perform_vlookup_correct = vlookup_module.perform_vlookup_correct
-insert_columns = insert_columns.insert_columns
-
-
-if __name__ == "__main__":
-    print(f"当前工作目录：{os.getcwd()}")
-    print("欢迎使用终端数据处理程序！")
-
-    source_folder = get_file_path("请输入源文件所在文件夹路径：")
-    source_filename = get_file_name("请输入源文件名（包含扩展名，例如：表05终端工单一览表.xlsx）：")
-    source_filepath = os.path.join(source_folder, source_filename)
-    if not check_file_exists(source_filepath):
-        exit()
-
-    source_sheet = get_sheet_name("请输入源文件子表名称：")
-
-    dest_folder = get_file_path("请输入目标文件所在文件夹路径（可新建）：", check_exists=False)
-    create_directory(dest_folder)
-    dest_filename = get_file_name("请输入目标文件名（包含扩展名，例如：终端出库报.xlsx）：")
-    dest_filepath = os.path.join(dest_folder, dest_filename)
-
-    result_sheet = get_sheet_name("请输入目标文件子表名称：")
-
-    # ... (main.py 的其余代码，现在可以直接使用 utils.py 中的函数了)
-    # 例如：
-    # continue_processing = get_yn_input("是否继续处理？(y/n): ")
-    # ...
 
 
 
