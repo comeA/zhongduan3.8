@@ -1,0 +1,46 @@
+import pandas as pd
+
+def copy_sheet_data(source_filepath, source_sheet_name, dest_filepath, new_sheet_name):
+    """复制工作表数据，包含引擎判断"""
+    try:
+        try:
+            source_df = pd.read_excel(source_filepath, sheet_name=source_sheet_name, engine='openpyxl')
+            engine_used = 'openpyxl'
+        except ValueError as e:
+            if "Unknown engine: openpyxl" in str(e):
+                print("检测到 openpyxl 引擎错误，尝试使用 xlrd 引擎。")
+                try:
+                    source_df = pd.read_excel(source_filepath, sheet_name=source_sheet_name, engine='xlrd')
+                    engine_used = 'xlrd'
+                except ImportError:
+                    print("xlrd 引擎未安装，请使用：pip install xlrd")
+                    return False
+                except Exception as e:
+                    print(f"使用 xlrd 引擎读取 excel 文件出错：{e}")
+                    return False
+            else:
+                print(f"读取 Excel 文件时发生值错误：{e}。")
+                return False
+        except FileNotFoundError:
+            print(f"错误：文件 {source_filepath} 未找到。")
+            return False
+        except Exception as e:
+            print(f"读取excel文件出错：{e}")
+            return False
+
+        if source_df.empty:
+            print(f"警告：源文件 {source_filepath} 的工作表 '{source_sheet_name}' 为空。")
+
+        try:
+            # 统一使用 pandas 的 ExcelWriter
+            with pd.ExcelWriter(dest_filepath, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+                source_df.to_excel(writer, sheet_name=new_sheet_name, index=False)
+            print(f"成功将工作表 '{source_sheet_name}' 复制到 '{dest_filepath}' 中的 '{new_sheet_name}'。(使用{engine_used}引擎读取)")
+            return True
+        except Exception as e:
+            print(f"使用 pandas 写入目标文件时发生未知错误：{e}")
+            return False
+
+    except Exception as e:
+        print(f"复制工作表数据时发生未知顶层错误：{e}")
+        return False

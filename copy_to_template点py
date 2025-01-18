@@ -1,0 +1,315 @@
+#迭代后的程序代码 新增openpyxl、xlrd模块引擎判断
+#版本 4.1
+# 开发人员： 卢鹤斌
+# 功能 ：
+#    1、读取“表05终端工单一览表”并进行筛选指定数据 ，
+#    2、并将数据复制到"XXX终端出库报表(新)"，
+#    3、同时新增并插入指定字段
+#    4、新增：自定义文件读取路径，更加细分，先读取路径，之后读取文件，最后读取工作子表
+#    5、优化输入的文件路径，使其更加符合人们日常的习惯
+#    6、复制接入号到指定的模板文件
+
+
+
+import pandas as pd
+
+def copy_data_to_template(source_filepath, source_sheet_name, template_filepath):
+    """
+    将源Excel文件指定工作表的数据复制到模板Excel文件，并覆盖模板文件中的同名工作表。
+
+    参数：
+    source_filepath (str): 源Excel文件的路径。
+    source_sheet_name (str): 源工作表的名称。
+    template_filepath (str): 模板Excel文件的路径。
+
+    返回值：
+    bool: 复制成功返回True，否则返回False。
+    """
+    try:
+        # 读取源Excel文件中的指定工作表
+        source_df = pd.read_excel(source_filepath, sheet_name=source_sheet_name, engine='openpyxl')
+
+        # 读取模板Excel文件（如果文件不存在，则创建一个新的空DataFrame）
+        try:
+            template_df = pd.read_excel(template_filepath, sheet_name=source_sheet_name, engine='openpyxl')
+        except FileNotFoundError:
+            print(f"警告：模板文件 {template_filepath} 未找到，将创建新文件。")
+            template_df = pd.DataFrame() # 创建一个空的DataFrame
+
+        except ValueError: # 如果模板文件存在，但是sheet不存在，则创建空的DataFrame
+            print(f"警告：模板文件{template_filepath}中{source_sheet_name}工作表不存在，将创建空工作表")
+            template_df = pd.DataFrame()
+
+        # 将源数据复制到模板DataFrame（直接覆盖）
+        template_df = source_df.copy()
+
+        # 将修改后的模板DataFrame写回模板Excel文件
+        with pd.ExcelWriter(template_filepath, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+            template_df.to_excel(writer, sheet_name=source_sheet_name, index=False)
+
+        print(f"成功将数据从 '{source_filepath}' 的 '{source_sheet_name}' 复制到模板 '{template_filepath}' 的 '{source_sheet_name}'。")
+        return True
+
+    except FileNotFoundError:
+        print(f"错误：文件 {source_filepath} 或 {template_filepath} 未找到。请检查文件路径是否正确。")
+        return False
+    except Exception as e:
+        print(f"复制数据到模板时发生未知错误：{e}")
+        return False
+
+
+'''
+import openpyxl
+import pandas as pd
+
+def copy_data_to_template(source_wb_path, source_sheet_name, template_path):
+    """将数据复制到导入模板，先清空模板数据（保留表头），并支持多列复制"""
+    try:
+        try:
+            df = pd.read_excel(source_wb_path, sheet_name=source_sheet_name, engine='openpyxl')
+            engine_used = 'openpyxl'
+        except ValueError as e:
+            if "Unknown engine: openpyxl" in str(e):
+                print("检测到openpyxl引擎错误，尝试使用xlrd引擎。")
+                try:
+                    df = pd.read_excel(source_wb_path, sheet_name=source_sheet_name, engine='xlrd')
+                    engine_used = 'xlrd'
+                except ImportError:
+                    print("xlrd引擎未安装，请使用：pip install xlrd")
+                    return False
+                except Exception as e:
+                    print(f"使用xlrd引擎读取excel文件出错：{e}。请检查是否为xlsx文件，xlrd2.0以上版本不再支持xlsx文件读取，请安装openpyxl库或者odfpy库。")
+                    return False
+            else:
+                print(f"读取 Excel 文件时发生值错误：{e}。")
+                return False
+    except FileNotFoundError:
+        print(f"错误：文件未找到。")
+        return False
+    except openpyxl.utils.exceptions.InvalidFileException:
+        print(f"错误：文件不是有效的 Excel 文件。")
+        return False
+    except Exception as e:
+        print(f"读取excel文件出错：{e}")
+        return False
+
+    try:
+        source_wb = openpyxl.load_workbook(source_wb_path)
+        source_sheet = source_wb[source_sheet_name]
+
+        template_wb = openpyxl.load_workbook(template_path)
+        template_sheet = template_wb.active
+
+        # 清空模板数据（保留表头）
+        max_row = template_sheet.max_row
+        if max_row > 1:
+            template_sheet.delete_rows(2, max_row)
+
+        data_to_copy = []
+        for row in source_sheet.iter_rows(min_row=2):
+            row_values = []
+            for cell in row:
+                row_values.append(cell.value)
+            try:
+                business_number_index = df.columns.get_loc("业务号码")
+                business_number = row_values[business_number_index]
+            except KeyError:
+                print("警告：源数据中缺少'业务号码'列，将复制所有数据。")
+                data_to_copy.append(row_values)
+                continue
+            except IndexError:
+                print("警告：当前行数据长度不足，无法获取'业务号码'。")
+                continue
+
+            if business_number is not None and isinstance(business_number, str):
+                cleaned_number = business_number.replace("'", "")
+                data_to_copy.append([cleaned_number])
+            elif business_number is not None:
+                data_to_copy.append([business_number])
+            else:
+                data_to_copy.append([""])
+
+        # 多列复制逻辑
+        start_col = 1  # 起始列（A列）
+        row_count = len(data_to_copy)
+        for i, data in enumerate(data_to_copy):
+            col_index = start_col + (i // 5000)  # 计算当前数据应该写入的列
+            row_index = (i % 5000) + 2  # 计算当前数据应该写入的行（从第2行开始）
+            try:
+                template_sheet.cell(row=row_index, column=col_index, value=data[0])
+            except IndexError:
+                print(f"警告：写入模板时发生IndexError，可能模板文件行数不足。尝试写入第{row_index}行,第{col_index}列时出错。")
+                break
+
+        template_wb.save(template_path)
+        print(f"数据已复制到 {template_path}。(使用{engine_used}引擎读取)")
+        return True
+    except FileNotFoundError:
+        print(f"错误：文件未找到。")
+        return False
+    except KeyError:
+        print(f"错误：工作簿中未找到指定工作表。")
+        return False
+    except openpyxl.utils.exceptions.InvalidFileException:
+        print(f"错误：文件不是有效的 Excel 文件。")
+        return False
+    except Exception as e:
+        print(f"复制数据到模板时发生错误：{e}")
+        return False
+'''
+
+
+# #版本 V4.0
+# import openpyxl
+# import pandas as pd
+#
+# def copy_data_to_template(source_wb_path, source_sheet_name, template_path):
+#     """将数据复制到导入模板，先清空模板数据（保留表头）"""
+#     try:
+#         try:
+#             df = pd.read_excel(source_wb_path, sheet_name=source_sheet_name, engine='openpyxl')
+#             engine_used = 'openpyxl'
+#         except ValueError as e:
+#             if "Unknown engine: openpyxl" in str(e):
+#                 print("检测到openpyxl引擎错误，尝试使用xlrd引擎。")
+#                 try:
+#                     df = pd.read_excel(source_wb_path, sheet_name=source_sheet_name, engine='xlrd')
+#                     engine_used = 'xlrd'
+#                 except ImportError:
+#                     print("xlrd引擎未安装，请使用：pip install xlrd")
+#                     return False
+#                 except Exception as e:
+#                     print(f"使用xlrd引擎读取excel文件出错：{e}")
+#                     return False
+#             else:
+#                 print(f"读取 Excel 文件时发生值错误：{e}。")
+#                 return False
+#     except FileNotFoundError:
+#         print(f"错误：文件未找到。")
+#         return False
+#     except openpyxl.utils.exceptions.InvalidFileException:
+#         print(f"错误：文件不是有效的 Excel 文件。")
+#         return False
+#     except Exception as e:
+#         print(f"读取excel文件出错：{e}")
+#         return False
+#
+#
+#     try:
+#         source_wb = openpyxl.load_workbook(source_wb_path)
+#         source_sheet = source_wb[source_sheet_name]
+#
+#         template_wb = openpyxl.load_workbook(template_path)
+#         template_sheet = template_wb.active
+#
+#         # 清空模板数据（保留表头）
+#         max_row = template_sheet.max_row
+#         if max_row > 1:  # 只有当有数据行（除表头外）时才删除
+#             template_sheet.delete_rows(2, max_row)  # 删除从第2行到最后一行的数据
+#
+#         data_to_copy = []
+#         for row in source_sheet.iter_rows(min_row=2):
+#             row_values = []
+#             for cell in row:
+#                 row_values.append(cell.value)
+#             try:
+#                 business_number_index = df.columns.get_loc("业务号码")
+#                 business_number = row_values[business_number_index]
+#             except KeyError:
+#                 print("警告：源数据中缺少'业务号码'列，将复制所有数据。")
+#                 data_to_copy.append(row_values)
+#                 continue
+#             except IndexError:
+#                 print("警告：当前行数据长度不足，无法获取'业务号码'。")
+#                 continue
+#
+#             if business_number is not None and isinstance(business_number, str):
+#                 cleaned_number = business_number.replace("'", "")
+#                 data_to_copy.append([cleaned_number])
+#             elif business_number is not None:
+#                 data_to_copy.append([business_number])
+#             else:
+#                 data_to_copy.append([""])
+#
+#         for i, data in enumerate(data_to_copy):
+#             try:
+#                 template_sheet.cell(row=i + 2, column=1, value=data[0])
+#             except IndexError:
+#                 print(f"警告：写入模板时发生IndexError，可能模板文件行数不足。尝试写入第{i+2}行时出错。")
+#                 break
+#
+#         template_wb.save(template_path)
+#         print(f"数据已复制到 {template_path}。(使用{engine_used}引擎读取)")
+#         return True
+#     except FileNotFoundError:
+#         print(f"错误：文件未找到。")
+#         return False
+#     except KeyError:
+#         print(f"错误：工作簿中未找到指定工作表。")
+#         return False
+#     except openpyxl.utils.exceptions.InvalidFileException:
+#         print(f"错误：文件不是有效的 Excel 文件。")
+#         return False
+#     except Exception as e:
+#         print(f"复制数据到模板时发生错误：{e}")
+#         return False
+
+
+
+#原版本
+# import openpyxl
+# import pandas as pd
+#
+# def copy_data_to_template(source_wb_path, source_sheet_name, template_path):
+#     """将数据复制到导入模板"""
+#     try:
+#         df = pd.read_excel(source_wb_path, sheet_name=source_sheet_name, engine='openpyxl')
+#         source_wb = openpyxl.load_workbook(source_wb_path)
+#         source_sheet = source_wb[source_sheet_name]
+#
+#         template_wb = openpyxl.load_workbook(template_path)
+#         template_sheet = template_wb.active
+#
+#         data_to_copy = []
+#         for row in source_sheet.iter_rows(min_row=2, values_only=True):  # 跳过表头
+#             try:
+#                 business_number_index = df.columns.get_loc("业务号码")
+#                 business_number = row[business_number_index]
+#             except KeyError:
+#                 print("警告：源数据中缺少'业务号码'列，将复制所有数据。")
+#                 data_to_copy.append(row)
+#                 continue
+#             except IndexError:
+#                 print("警告：当前行数据长度不足，无法获取'业务号码'。")
+#                 continue
+#
+#             if business_number is not None and isinstance(business_number, str):
+#                 cleaned_number = business_number.replace("'", "")
+#                 data_to_copy.append([cleaned_number])
+#             elif business_number is not None:
+#                 data_to_copy.append([business_number])
+#             else:
+#                 data_to_copy.append([""])
+#
+#         for i, data in enumerate(data_to_copy):
+#             try:
+#                 template_sheet.cell(row=i + 2, column=1, value=data[0])
+#             except IndexError:
+#                 print(f"警告：写入模板时发生IndexError，可能模板文件行数不足。尝试写入第{i+2}行时出错。")
+#                 break
+#
+#         template_wb.save(template_path)
+#         print(f"数据已复制到 {template_path}。")
+#         return True
+#     except FileNotFoundError:
+#         print(f"错误：文件未找到。")
+#         return False
+#     except KeyError:
+#         print(f"错误：工作簿中未找到指定工作表。")
+#         return False
+#     except openpyxl.utils.exceptions.InvalidFileException:
+#         print(f"错误：文件不是有效的 Excel 文件。")
+#         return False
+#     except Exception as e:
+#         print(f"复制数据到模板时发生错误：{e}")
+#         return False

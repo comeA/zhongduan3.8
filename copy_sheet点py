@@ -1,0 +1,221 @@
+import pandas as pd
+
+
+def copy_sheet_data(source_filepath, source_sheet_name, dest_filepath, new_sheet_name):
+    """
+    将源Excel文件中的指定工作表复制到目标Excel文件的新工作表。
+
+    参数：
+    source_filepath (str): 源Excel文件的路径。
+    source_sheet_name (str): 源工作表的名称。
+    dest_filepath (str): 目标Excel文件的路径。
+    new_sheet_name (str): 目标文件中新工作表的名称。
+
+    返回值：
+    bool: 复制成功返回True，否则返回False。
+    """
+    try:
+        # 使用 pandas 读取源 Excel 文件中的指定工作表
+        source_df = pd.read_excel(source_filepath, sheet_name=source_sheet_name, engine='openpyxl')
+
+        # 使用 pandas 将 DataFrame 写入目标 Excel 文件的新工作表
+        with pd.ExcelWriter(dest_filepath, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+            source_df.to_excel(writer, sheet_name=new_sheet_name, index=False)
+
+        print(f"成功将工作表 '{source_sheet_name}' 复制到 '{dest_filepath}' 中的 '{new_sheet_name}'。")
+        return True
+
+    except FileNotFoundError:
+        print(f"错误：文件 {source_filepath} 或 {dest_filepath} 未找到。请检查文件路径是否正确。")
+        return False
+
+    except ValueError as e:
+        print(f"错误：工作表 {source_sheet_name} 在文件 {source_filepath} 中不存在。错误信息：{e}。请检查工作表名称是否正确。")
+        return False
+
+    except KeyError as e:  # 捕获KeyError，更精确地处理工作表不存在的错误
+        print(f"错误：工作表 {source_sheet_name} 在文件 {source_filepath} 中不存在。错误信息：{e}。请检查工作表名称是否正确。")
+        return False
+
+    except Exception as e:
+        print(f"复制工作表数据时发生未知错误：{e}")
+        return False
+
+
+
+'''
+import openpyxl
+import os
+
+def copy_sheet_data(source_wb_path, source_sheet_name, dest_wb_path, dest_sheet_name):
+    """复制工作表数据并重命名"""
+    try:
+        source_wb = openpyxl.load_workbook(source_wb_path)
+        source_sheet = source_wb[source_sheet_name]
+    except FileNotFoundError:
+        print(f"错误：源文件 {source_wb_path} 未找到。")
+        return False
+    except KeyError:
+        print(f"错误：源工作簿中未找到名为 {source_sheet_name} 的工作表。")
+        return False
+    except openpyxl.utils.exceptions.InvalidFileException:
+        print(f"错误：源文件 {source_wb_path} 不是有效的 Excel 文件。")
+        return False
+    except Exception as e:
+        print(f"读取源文件时发生未知错误：{e}")
+        return False
+
+    try:
+        if os.path.exists(dest_wb_path):
+            dest_wb = openpyxl.load_workbook(dest_wb_path)
+            if dest_sheet_name in dest_wb.sheetnames:
+                dest_sheet = dest_wb[dest_sheet_name]
+                dest_sheet.delete_rows(1, dest_sheet.max_row)
+            else:
+                dest_sheet = dest_wb.create_sheet(dest_sheet_name)
+        else:
+            dest_wb = openpyxl.Workbook()
+            dest_sheet = dest_wb.create_sheet(dest_sheet_name)
+    except openpyxl.utils.exceptions.InvalidFileException:
+        print(f"错误：目标文件 {dest_wb_path} 不是有效的 Excel 文件。")
+        return False
+    except Exception as e:
+        print(f"创建或加载目标文件时发生错误: {e}")
+        return False
+
+    if dest_wb is None:
+        print("创建或加载目标文件失败，无法继续复制数据。")
+        return False
+
+    for row in source_sheet.iter_rows(min_row=1):
+        row_values = [cell.value for cell in row]
+        dest_sheet.append(row_values)
+
+    try:
+        if "Sheet1" in dest_wb.sheetnames:
+            sheet1 = dest_wb["Sheet1"]
+            sheet1.title = "表05终端工单一览表"
+        dest_wb.save(dest_wb_path)
+        return True
+    except Exception as e:
+        print(f"保存目标文件或重命名sheet时发生错误: {e}")
+        return False
+
+'''
+
+
+# import os
+# import pandas as pd
+# import openpyxl
+# from copy_sheet import copy_sheet_data
+# from filter_excel import filter_data
+# from insert_columns import insert_columns
+# from copy_to_template import copy_data_to_template
+#
+# # 如果 sn_data_process.py 在 utils 子目录下，则使用以下导入方式
+# # from utils.sn_data_process import sort_and_save_sn_data, get_loid_sn
+#
+# # 如果 sn_data_process.py 与 main.py 在同一目录下，则使用以下导入方式
+# from sn_data_process import sort_and_save_sn_data, get_loid_sn
+#
+# def get_sheet_name(prompt):
+#     while True:
+#         sheet_name = input(prompt)
+#         if sheet_name:
+#             return sheet_name
+#         else:
+#             print("工作表名称不能为空，请重新输入。")
+#
+# # 主程序
+# if __name__ == "__main__":
+#     print("请提供源文件信息：")
+#     source_path = input("请输入源文件所在的路径（例如：E:\\luheb\\2022年终端出库问题\\）：").replace("\\", "/")
+#     source_file = input("请输入源文件名（例如：file.xlsx）：")
+#     source_filepath = os.path.join(source_path, source_file)
+#     if not os.path.exists(source_filepath):
+#         print(f"错误：源文件 {source_filepath} 不存在。")
+#         exit()
+#     source_sheet = get_sheet_name("请输入源工作表名称：")
+#
+#     print("\n请提供目标文件信息：")
+#     dest_path = input("请输入目标文件所在的路径（例如：E:\\luheb\\2022年终端出库问题\\）：").replace("\\", "/")
+#     dest_file = input("请输入目标文件名（例如：file.xlsx）：")
+#     dest_filepath = os.path.join(dest_path, dest_file)
+#     if not os.path.exists(dest_filepath):
+#         print(f"错误：目标文件 {dest_filepath} 不存在。")
+#         exit()
+#     dest_sheet = get_sheet_name("请输入目标工作表初始名称（通常是Sheet1）：")
+#     result_sheet = get_sheet_name("请输入筛选结果保存的工作表名称：")
+#
+#     template_file = input("请输入导入模板文件名（例如：导入模板.xlsx）：")
+#     template_filepath = os.path.join(dest_path, template_file)
+#     if not os.path.exists(template_filepath):
+#         print(f"错误：导入模板文件 {template_filepath} 不存在。")
+#         exit()
+#
+#     print("\n正在处理，请稍候...")
+#
+#     if copy_sheet_data(source_filepath, source_sheet, dest_filepath, dest_sheet):
+#         if filter_data(dest_filepath, "表05终端工单一览表", result_sheet):
+#             if insert_columns(dest_filepath, result_sheet):
+#                 if copy_data_to_template(dest_filepath, result_sheet, template_filepath):
+#                     continue_processing = input("数据已成功复制到模板。是否继续处理“业务号码-LOID（SN码）”数据？(y/n): ")
+#                     if continue_processing.lower() == 'y':
+#                         while True:
+#                             sn_data_path = input("请输入“业务号码-LOID（SN码）”数据文件路径：").replace("\\", "/")
+#                             sn_file = input("请输入“业务号码-LOID（SN码）”文件名(该文件名称一般包含关键字dwd_hzluheb_acc_sn_final_pg)：")
+#                             sn_data_filepath = os.path.join(sn_data_path, sn_file)
+#                             if not os.path.exists(sn_data_filepath):
+#                                 print(f"错误：SN数据文件 {sn_data_filepath} 不存在。")
+#                                 continue
+#                             sn_sheet = input("请输入“业务号码-LOID（SN码）”文件子表名称(该文件子表名称一般包含关键字dwd_hzluheb_acc_sn_final_pg)：")
+#                             if "dwd_hzluheb_acc_sn_final_pg" not in sn_file and "dwd_hzluheb_acc_sn_final_pg" not in sn_sheet:
+#                                 print("文件名或子表名不包含关键字dwd_hzluheb_acc_sn_final_pg，请检查")
+#                                 continue
+#
+#                             sorted_sn_file = "sorted_" + sn_file
+#                             sorted_sn_filepath = os.path.join(sn_data_path, sorted_sn_file)
+#
+#                             if sort_and_save_sn_data(sn_data_filepath, sn_sheet, sorted_sn_filepath):
+#                                 if os.path.exists(sorted_sn_filepath):
+#                                     break  # 排序和保存成功，跳出循环
+#                                 else:
+#                                     print(f"错误：排序后的SN数据文件 {sorted_sn_filepath} 未成功创建。")
+#                                     continue
+#                             else:
+#                                 print("处理SN数据失败，请检查文件内容和格式。")
+#
+#                         try:
+#                             df = pd.read_excel(dest_filepath, sheet_name=result_sheet)
+#                         except Exception as e:
+#                             print(f"读取需要vlookup的excel文件出错：{e}")
+#                             exit()
+#                         business_number_column_name = input("请输入需要vlookup的excel文件中业务号码所在的列名：")
+#                         if business_number_column_name not in df.columns:
+#                             print(f"输入的列名{business_number_column_name}不存在，请检查")
+#                             exit()
+#                         business_numbers = df[business_number_column_name].tolist()
+#                         loid_sn_list = get_loid_sn(sorted_sn_filepath, business_numbers)
+#                         if loid_sn_list is not None:  # 关键：检查 loid_sn_list 是否为 None
+#                             df["LOID（SN码）"] = loid_sn_list
+#                             try:
+#                                 with pd.ExcelWriter(dest_filepath, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+#                                     df.to_excel(writer, sheet_name=result_sheet, index=False)
+#                                 print("LOID（SN码）已成功匹配并添加到文件中。")
+#                             except Exception as e:
+#                                 print(f"保存vlookup结果到excel文件出错：{e}")
+#                         else:
+#                             print("获取LOID（SN码）失败，请检查SN数据文件和业务号码列。") # 更详细的提示信息
+#                         print("所有操作完成！")
+#                     elif continue_processing.lower() == 'n':
+#                         print("操作完成！")
+#                     else:
+#                         print("无效的输入，操作完成！")
+#                 else:
+#                     print("复制数据到模板失败！")
+#             else:
+#                 print("插入列失败！")
+#         else:
+#             print("筛选数据失败！")
+#     else:
+#         print("复制工作表数据失败！")

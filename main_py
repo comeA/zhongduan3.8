@@ -1,0 +1,60 @@
+#版本 V4.0
+import os
+from copy_sheet import copy_sheet_data
+from filter_excel import filter_data
+from insert_columns import insert_columns
+from copy_to_template import copy_data_to_template
+
+def get_sheet_name(prompt):
+    while True:
+        sheet_name = input(prompt)
+        if sheet_name:
+            return sheet_name
+        else:
+            print("工作表名称不能为空，请重新输入。")
+
+# 主程序
+if __name__ == "__main__": # 确保只在直接运行时执行
+    print("请提供源文件信息：")
+    source_path = input("请输入源文件所在的路径（例如：E:\\卢鹤斌\\2022年终端出库问题\\）：").replace("\\", "/")
+    source_file = input("请输入源文件名（例如：file.xlsx）：")
+    source_filepath = os.path.join(source_path, source_file)
+    if not os.path.exists(source_filepath):
+        print(f"错误：源文件 {source_filepath} 不存在。")
+        exit()
+    source_sheet = get_sheet_name("请输入源工作表名称：")
+
+    print("\n请提供目标文件信息：")
+    dest_path = input("请输入目标文件所在的路径（例如：E:\\卢鹤斌\\2022年终端出库问题\\）：").replace("\\", "/")
+    dest_file = input("请输入目标文件名（例如：file.xlsx）：")
+    dest_filepath = os.path.join(dest_path, dest_file)
+    if not os.path.exists(dest_filepath):
+        print(f"错误：目标文件 {dest_filepath} 不存在。")
+        exit()
+    dest_sheet = get_sheet_name("请输入目标工作表初始名称（通常是Sheet1）：")
+    result_sheet = get_sheet_name("请输入筛选结果保存的工作表名称：")
+
+    template_file = input("请输入导入模板文件名（例如：导入模板.xlsx）：")
+    template_filepath = os.path.join(dest_path, template_file)
+    if not os.path.exists(template_filepath):
+        print(f"错误：导入模板文件 {template_filepath} 不存在。")
+        exit()
+
+    print("\n正在处理，请稍候...")
+
+    if copy_sheet_data(source_filepath, source_sheet, dest_filepath, dest_sheet):
+        if filter_data(dest_filepath, "表05终端工单一览表", result_sheet):
+            if insert_columns(dest_filepath, result_sheet):
+                if copy_data_to_template(dest_filepath, result_sheet, template_filepath):
+                    print("操作完成！")
+                else:
+                    print("复制数据到模板失败！")
+            else:
+                print("插入列操作失败！")
+        else:
+            print("筛选或保存筛选结果失败！")
+    else:
+        print("复制数据失败！")
+
+    print("程序结束。")
+    print("谢谢使用，该程序由卢鹤斌提供")

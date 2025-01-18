@@ -1,0 +1,337 @@
+#版本 V4.0
+# 开发人员： 卢鹤斌
+# 功能 ：
+#    1、读取“表05终端工单一览表”并进行筛选指定数据 ，
+#    2、并将数据复制到"XXX终端出库报表(新)"，
+#    3、同时新增并插入指定字段
+#    4、新增：自定义文件读取路径，更加细分，先读取路径，之后读取文件，最后读取工作子表
+#    5、优化输入的文件路径，使其更加符合人们日常的习惯
+#    6、复制接入号到指定的模板文件
+#版本 V4.1
+#优化人员：卢鹤斌
+#优化改进：
+# 1、在 sn_data_process.py 文件中的 process_sn_data 函数内部，
+#   添加了与 filter_data 和 insert_columns 函数类似的 try-except 块，
+#   用于捕获 ValueError: Unknown engine: openpyxl 异常，并尝试使用 xlrd 引擎。
+#   在xlrd引擎读取excel文件出错的异常中添加了提示信息，提示用户检查是否为xlsx文件，并告知xlrd库2.0以上版本不再支持xlsx文件读取
+# 2 、vlookup  dwd_hzluheb_acc_sn_final_pg表的数据到 全市出库光猫型号与在用不一致 子表的  loin_sn码
+
+
+
+import os
+import pandas as pd
+from sn_data_process import process_sn_data, sort_and_save_sn_data
+from vlookup_module import perform_vlookup
+
+def get_sheet_name(prompt):
+    while True:
+        sheet_name = input(prompt)
+        if sheet_name:
+            return sheet_name
+        else:
+            print("工作表名称不能为空，请重新输入。")
+
+if __name__ == "__main__":
+    source_path = input("请输入源文件路径：").replace("\\", "/")
+    source_file = input("请输入源文件名：")
+    source_filepath = os.path.join(source_path, source_file)
+    source_sheet = get_sheet_name("请输入源文件子表名称：")
+
+    template_path = input("请输入模板文件路径：").replace("\\", "/")
+    template_file = input("请输入模板文件名：")
+    template_filepath = os.path.join(template_path, template_file)
+
+    dest_path = input("请输入目标文件路径：").replace("\\", "/")
+    dest_file = input("请输入目标文件名：")
+    dest_filepath = os.path.join(dest_path, dest_file)
+    result_sheet = get_sheet_name("请输入目标文件子表名称：")
+
+    if process_sn_data(source_filepath, source_sheet, template_filepath, dest_filepath, result_sheet):
+        continue_processing = input("数据已成功复制到模板。是否继续处理“业务号码-LOID（SN码）”数据？(y/n): ")
+        if continue_processing.lower() == 'y':
+            while True:
+                sn_data_path = input("请输入“业务号码-LOID（SN码）”数据文件路径：").replace("\\", "/")
+                sn_file = input("请输入“业务号码-LOID（SN码）”文件名：")
+                sn_data_filepath = os.path.join(sn_data_path, sn_file)
+                if not os.path.exists(sn_data_filepath):
+                    print(f"错误：SN数据文件 {sn_data_filepath} 不存在。")
+                    continue
+                sn_sheet = input("请输入“业务号码-LOID（SN码）”文件子表名称：")
+                if "dwd_hzluheb_acc_sn_final_pg" not in sn_file and "dwd_hzluheb_acc_sn_final_pg" not in sn_sheet:
+                    print("文件名或子表名不包含关键字dwd_hzluheb_acc_sn_final_pg，请检查")
+                    continue
+
+                sorted_sn_file = "sorted_" + sn_file
+                sorted_sn_filepath = os.path.join(sn_data_path, sorted_sn_file)
+                if sort_and_save_sn_data(sn_data_filepath, sn_sheet, sorted_sn_filepath):
+                    try:
+                        df = pd.read_excel(dest_filepath, sheet_name=f"{result_sheet}_筛选后", engine='openpyxl')
+                    except FileNotFoundError as e:
+                        print(f"错误：目标文件 {dest_filepath} 不存在。")
+                        break
+                    except ValueError as e:
+                        print(f"错误：目标文件 {dest_filepath} 中工作表 '{result_sheet}_筛选后' 不存在。")
+                        break
+
+                    try:
+                        sn_df = pd.read_excel(sorted_sn_filepath,sheet_name=sn_sheet, engine='openpyxl')
+                    except FileNotFoundError as e:
+                        print(f"错误：排序后的SN数据文件 {sorted_sn_filepath} 不存在。")
+                        break
+                    except ValueError as e:
+                        print(f"错误：排序后的SN数据文件 {sorted_sn_filepath} 中工作表 {sn_sheet} 不存在，请检查")
+                        break
+
+                    df = perform_vlookup(df, sn_df)
+                    if df is None:
+                        break
+
+                    try:
+                        with pd.ExcelWriter(dest_filepath, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+                            df.to_excel(writer, sheet_name=f"{result_sheet}_筛选后", index=False)
+                        print("LOID（SN码）已成功匹配并添加到文件中。")
+                    except Exception as e:
+                        print(f"保存vlookup结果到excel文件出错：{e}")
+                    break
+                else:
+                    print("处理SN数据失败，请检查文件内容和格式。")
+                    break
+        elif continue_processing.lower() == 'n':
+            print("操作完成！")
+        else:
+            print("无效的输入，操作完成！")
+    else:
+        print("处理失败！")
+
+    print("程序结束。")
+
+'''
+import os
+import pandas as pd
+import openpyxl
+from copy_sheet import copy_sheet_data
+from filter_excel import filter_data
+from insert_columns import insert_columns
+from copy_to_template import copy_data_to_template
+#from sn_data_process import process_sn_data, get_loid_sn
+# from sn_data_process import sort_and_save_sn_data, get_loid_sn # 最好同时导入 get_loid_sn，避免后续再修改
+from sn_data_process import sort_and_save_sn_data, get_loid_sn
+
+
+def get_sheet_name(prompt):
+     while True:
+        sheet_name = input(prompt)
+        if sheet_name:
+            return sheet_name
+        else:
+            print("工作表名称不能为空，请重新输入。")
+
+# 主程序
+if __name__ == "__main__":
+    print("请提供源文件信息：")
+    source_path = input("请输入源文件所在的路径（例如：E:\\luheb\\2022年终端出库问题\\）：").replace("\\", "/")
+    source_file = input("请输入源文件名（例如：file.xlsx）：")
+    source_filepath = os.path.join(source_path, source_file)
+    if not os.path.exists(source_filepath):
+        print(f"错误：源文件 {source_filepath} 不存在。")
+        exit()
+    source_sheet = get_sheet_name("请输入源工作表名称：")
+
+    print("\n请提供目标文件信息：")
+    dest_path = input("请输入目标文件所在的路径（例如：E:\\luheb\\2022年终端出库问题\\）：").replace("\\", "/")
+    dest_file = input("请输入目标文件名（例如：file.xlsx）：")
+    dest_filepath = os.path.join(dest_path, dest_file)
+    if not os.path.exists(dest_filepath):
+        print(f"错误：目标文件 {dest_filepath} 不存在。")
+        exit()
+    dest_sheet = get_sheet_name("请输入目标工作表初始名称（通常是Sheet1）：")
+    result_sheet = get_sheet_name("请输入筛选结果保存的工作表名称：")
+
+    template_file = input("请输入导入模板文件名（例如：导入模板.xlsx）：")
+    template_filepath = os.path.join(dest_path, template_file)
+    if not os.path.exists(template_filepath):
+        print(f"错误：导入模板文件 {template_filepath} 不存在。")
+        exit()
+
+    print("\n正在处理，请稍候...")
+
+    if copy_sheet_data(source_filepath, source_sheet, dest_filepath, dest_sheet):
+        if filter_data(dest_filepath, "表05终端工单一览表", result_sheet):
+            if insert_columns(dest_filepath, result_sheet):
+                if copy_data_to_template(dest_filepath, result_sheet, template_filepath):
+                    continue_processing = input("数据已成功复制到模板。是否继续处理“业务号码-LOID（SN码）”数据？(y/n): ")
+                    if continue_processing.lower() == 'y':
+                        # 3. “业务号码-LOID（SN码）”数据处理部分 (关键修改在此处!)
+                        while True: # 循环，直到SN数据处理成功
+                            sn_data_path = input("请输入“业务号码-LOID（SN码）”数据文件路径：").replace("\\", "/")
+                            sn_file = input("请输入“业务号码-LOID（SN码）”文件名：")
+                            sn_data_filepath = os.path.join(sn_data_path, sn_file)
+                            if not os.path.exists(sn_data_filepath):
+                                print(f"错误：SN数据文件 {sn_data_filepath} 不存在。")
+                                continue
+                            sn_sheet = input("请输入“业务号码-LOID（SN码）”文件子表名称：")
+                            if "dwd_hzluheb_acc_sn_final_pg" not in sn_file and "dwd_hzluheb_acc_sn_final_pg" not in sn_sheet:
+                                print("文件名或子表名不包含关键字dwd_hzluheb_acc_sn_final_pg，请检查")
+                                continue
+
+                            sorted_sn_file = "sorted_" + sn_file
+                            sorted_sn_filepath = os.path.join(sn_data_path, sorted_sn_file)
+
+                            # ***关键修改1：先调用 sort_and_save_sn_data***
+                            if sort_and_save_sn_data(sn_data_filepath, sn_sheet, sorted_sn_filepath):
+                                if os.path.exists(sorted_sn_filepath):
+                                    break
+                                else:
+                                    print(f"错误：排序后的SN数据文件 {sorted_sn_filepath} 未成功创建。")
+                                    continue
+                            else:
+                                print("处理SN数据失败，请检查文件内容和格式。")
+
+                            try:
+                                df = pd.read_excel(dest_filepath, sheet_name=result_sheet, engine='openpyxl')  # 关键修改
+                            except Exception as e:
+                                print(f"读取需要vlookup的excel文件出错：{e}")
+                                exit()
+
+                            business_number_column_name = input("请输入需要vlookup的excel文件中业务号码所在的列名：")
+                            if business_number_column_name not in df.columns:
+                                print(f"输入的列名{business_number_column_name}不存在，请检查")
+                                exit()
+                            business_numbers = df[business_number_column_name].tolist()
+                            loid_sn_list = get_loid_sn(sorted_sn_filepath, business_numbers)# 使用正确的函数名
+                        if loid_sn_list is not None:
+                            df["LOID（SN码）"] = loid_sn_list
+                            try:
+                                with pd.ExcelWriter(dest_filepath, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+                                    df.to_excel(writer, sheet_name=result_sheet, index=False)
+                                print("LOID（SN码）已成功匹配并添加到文件中。")
+                            except Exception as e:
+                                print(f"保存vlookup结果到excel文件出错：{e}")
+                        else:
+                            print("获取LOID（SN码）失败。")
+                        print("所有操作完成！")
+                    elif continue_processing.lower() == 'n':
+                        print("操作完成！")
+                    else:
+                        print("无效的输入，操作完成！")
+                else:
+                    print("复制数据到模板失败！")
+            else:
+                print("插入列失败！")
+        else:
+            print("筛选数据失败！")
+    else:
+        print("复制工作表数据失败！")
+
+    print("程序结束。")
+'''
+
+
+
+
+
+
+
+
+# import os
+# from copy_sheet import copy_sheet_data
+# from filter_excel import filter_data
+# from insert_columns import insert_columns
+# from copy_to_template import copy_data_to_template
+# from sn_data_process import process_sn_data
+#
+# def get_sheet_name(prompt):
+#     while True:
+#         sheet_name = input(prompt)
+#         if sheet_name:
+#             return sheet_name
+#         else:
+#             print("工作表名称不能为空，请重新输入。")
+#
+# # 主程序
+# if __name__ == "__main__": # 确保只在直接运行时执行
+#     print("请提供源文件信息：")
+#     source_path = input("请输入源文件所在的路径（例如：E:\\卢鹤斌\\2022年终端出库问题\\）：").replace("\\", "/")
+#     source_file = input("请输入源文件名（例如：file.xlsx）：")
+#     source_filepath = os.path.join(source_path, source_file)
+#     if not os.path.exists(source_filepath):
+#         print(f"错误：源文件 {source_filepath} 不存在。")
+#         exit()
+#     source_sheet = get_sheet_name("请输入源工作表名称：")
+#
+#     print("\n请提供目标文件信息：")
+#     dest_path = input("请输入目标文件所在的路径（例如：E:\\卢鹤斌\\2022年终端出库问题\\）：").replace("\\", "/")
+#     dest_file = input("请输入目标文件名（例如：file.xlsx）：")
+#     dest_filepath = os.path.join(dest_path, dest_file)
+#     if not os.path.exists(dest_filepath):
+#         print(f"错误：目标文件 {dest_filepath} 不存在。")
+#         exit()
+#     dest_sheet = get_sheet_name("请输入目标工作表初始名称（通常是Sheet1）：")
+#     result_sheet = get_sheet_name("请输入筛选结果保存的工作表名称：")  #全市出库光猫型号与在用不一致
+#
+#     template_file = input("请输入导入模板文件名（例如：导入模板.xlsx）：")
+#     template_filepath = os.path.join(dest_path, template_file)
+#     if not os.path.exists(template_filepath):
+#         print(f"错误：导入模板文件 {template_filepath} 不存在。")
+#         exit()
+#
+#     print("\n正在处理，请稍候...")
+#
+#     if copy_sheet_data(source_filepath, source_sheet, dest_filepath, dest_sheet):
+#         if filter_data(dest_filepath, "表05终端工单一览表", result_sheet):
+#             if insert_columns(dest_filepath, result_sheet):
+#                 if copy_data_to_template(dest_filepath, result_sheet, template_filepath):
+#                     continue_processing = input("数据已成功复制到模板。是否继续处理“业务号码-LOID（SN码）”数据？(y/n): ")
+#                     if continue_processing.lower() == 'y':
+#                         while True:
+#                             sn_data_path = input("请输入“业务号码-LOID（SN码）”数据文件路径：").replace("\\", "/")
+#                             sn_file = input("请输入“业务号码-LOID（SN码）”文件名(该文件名称一般包含关键字dwd_hzluheb_acc_sn_final_pg)：")
+#                             sn_data_filepath = os.path.join(sn_data_path, sn_file)
+#                             if not os.path.exists(sn_data_filepath):
+#                                 print(f"错误：SN数据文件 {sn_data_filepath} 不存在。")
+#                                 continue
+#                             sn_sheet = input("请输入“业务号码-LOID（SN码）”文件子表名称(该文件子表名称一般包含关键字dwd_hzluheb_acc_sn_final_pg)：")
+#                             if "dwd_hzluheb_acc_sn_final_pg" not in sn_file and "dwd_hzluheb_acc_sn_final_pg" not in sn_sheet:
+#                                 print("文件名或子表名不包含关键字dwd_hzluheb_acc_sn_final_pg，请检查")
+#                                 continue
+#                             if process_sn_data(sn_data_filepath, sn_sheet):
+#                                 break
+#                             else:
+#                                 print("处理SN数据失败，请检查文件内容和格式。")
+#                         try:
+#                             df = pd.read_excel(dest_filepath, sheet_name=result_sheet, engine='openpyxl') #读取需要vlookup的excel文件
+#                         except Exception as e:
+#                             print(f"读取需要vlookup的excel文件出错：{e}")
+#                             exit()
+#                         business_numbers = df["业务号码"].tolist() #获取需要vlookup的业务号码列表
+#                         loid_sn_list = get_loid_sn(sn_data_filepath, sn_sheet, business_numbers) #调用vlookup函数
+#                         if loid_sn_list is not None: #判断是否成功获取到数据
+#                             df["LOID（SN码）"] = loid_sn_list #将获取到的数据赋值给新的列
+#                             try:
+#                                 book = openpyxl.load_workbook(dest_filepath)
+#                                 writer = pd.ExcelWriter(dest_filepath, engine='openpyxl')
+#                                 writer.book = book
+#                                 writer.sheets = dict((ws.title, ws) for ws in book.worksheets)
+#                                 df.to_excel(writer, sheet_name=result_sheet, index=False)
+#                                 writer.save()
+#                                 print("LOID（SN码）已成功匹配并添加到文件中。")
+#                             except Exception as e:
+#                                 print(f"保存vlookup结果到excel文件出错：{e}")
+#                         else:
+#                             print("获取LOID（SN码）失败。")
+#                         print("所有操作完成！")
+#                     elif continue_processing.lower() == 'n':
+#                         print("操作完成！")
+#                     else:
+#                         print("无效的输入，操作完成！")
+#                 else:
+#                     print("复制数据到模板失败！")
+#             else:
+#                 print("插入列操作失败！")
+#         else:
+#             print("筛选或保存筛选结果失败！")
+#     else:
+#         print("复制数据失败！")
+#
+#     print("程序结束。")
+#     print("谢谢使用，该程序由卢鹤斌提供")

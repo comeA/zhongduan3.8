@@ -1,0 +1,105 @@
+#迭代后的程序代码 新增模块引擎判断
+#版本 V4.0
+# 开发人员： 卢鹤斌
+# 功能 ：
+#    1、读取“表05终端工单一览表”并进行筛选指定数据 ，
+#    2、并将数据复制到"XXX终端出库报表(新)"，
+#    3、同时新增并插入指定字段
+#    4、新增：自定义文件读取路径，更加细分，先读取路径，之后读取文件，最后读取工作子表
+#    5、优化输入的文件路径，使其更加符合人们日常的习惯
+#    6、复制接入号到指定的模板文件
+import pandas as pd
+import openpyxl
+
+def filter_data(wb_path, sheet_name, result_sheet_name):
+    """使用 pandas 进行数据筛选并将结果保存到新工作表，包含引擎判断"""
+    try:
+        try:
+            df = pd.read_excel(wb_path, sheet_name=sheet_name, engine='openpyxl')
+            engine_used = 'openpyxl'  # 记录使用的引擎
+        except ValueError as e:
+            if "Unknown engine: openpyxl" in str(e): #判断是否是openpyxl引擎问题
+                print("检测到openpyxl引擎错误，尝试使用xlrd引擎。")
+                try:
+                    df = pd.read_excel(wb_path, sheet_name=sheet_name, engine='xlrd')
+                    engine_used = 'xlrd' #记录使用的引擎
+                except ImportError:
+                    print("xlrd引擎未安装，请使用：pip install xlrd")
+                    return False
+                except Exception as e:
+                    print(f"使用xlrd引擎读取excel文件出错：{e}")
+                    return False
+            else: #其他ValueError
+                print(f"读取 Excel 文件时发生值错误：{e}。")
+                return False
+
+    except FileNotFoundError:
+        print(f"错误：文件 {wb_path} 未找到。")
+        return False
+    except openpyxl.utils.exceptions.InvalidFileException:
+        print(f"错误：文件 {wb_path} 不是有效的 Excel 文件。")
+        return False
+    except Exception as e:
+        print(f"读取excel文件出错：{e}")
+        return False
+
+    # 筛选 (此部分保持不变)
+    df = df[df['终端4级目录名称'].str.contains('A8C|光猫', na=False, regex=True)]
+    df = df[df['业务工单回单类型'].str.contains('在途', na=False)]
+    df = df[~df['条形码'].isin(['空白', "'", "''", " ", None])]
+
+    try:
+        book = openpyxl.load_workbook(wb_path)
+        writer = pd.ExcelWriter(wb_path, engine='openpyxl') #保存时还是用openpyxl
+        writer.book = book
+        writer.sheets = dict((ws.title, ws) for ws in book.worksheets)
+        df.to_excel(writer, sheet_name=result_sheet_name, index=False)
+        writer.save()
+
+        print(f"筛选后的数据已保存到 {wb_path} 的 {result_sheet_name} 工作表中。(使用{engine_used}引擎读取)") #打印使用的引擎
+        return True
+    except Exception as e:
+        print(f"保存筛选结果时发生错误：{e}")
+        return False
+
+
+
+#原本程序代码
+# import pandas as pd
+# import openpyxl
+#
+# def filter_data(wb_path, sheet_name, result_sheet_name):
+#     """使用 pandas 进行数据筛选并将结果保存到新工作表"""
+#     try:
+#         df = pd.read_excel(wb_path, sheet_name=sheet_name, engine='openpyxl')
+#     except FileNotFoundError:
+#         print(f"错误：文件 {wb_path} 未找到。")
+#         return False
+#     except ValueError as e:
+#         print(f"错误：读取 Excel 文件时发生值错误：{e}。")
+#         return False
+#     except openpyxl.utils.exceptions.InvalidFileException:
+#         print(f"错误：文件 {wb_path} 不是有效的 Excel 文件。")
+#         return False
+#     except Exception as e:
+#         print(f"读取excel文件出错：{e}")
+#         return False
+#
+#     # 筛选
+#     df = df[df['终端4级目录名称'].str.contains('A8C|光猫', na=False, regex=True)]
+#     df = df[df['业务工单回单类型'].str.contains('在途', na=False)]
+#     df = df[~df['条形码'].isin(['空白', "'", "''", " ", None])]
+#
+#     try:
+#         book = openpyxl.load_workbook(wb_path)
+#         writer = pd.ExcelWriter(wb_path, engine='openpyxl')
+#         writer.book = book
+#         writer.sheets = dict((ws.title, ws) for ws in book.worksheets)
+#         df.to_excel(writer, sheet_name=result_sheet_name, index=False)
+#         writer.save()
+#
+#         print(f"筛选后的数据已保存到 {wb_path} 的 {result_sheet_name} 工作表中。")
+#         return True
+#     except Exception as e:
+#         print(f"保存筛选结果时发生错误：{e}")
+#         return False

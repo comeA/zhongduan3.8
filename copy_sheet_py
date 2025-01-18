@@ -1,0 +1,57 @@
+#版本 V4.0
+import openpyxl
+import os
+
+def copy_sheet_data(source_wb_path, source_sheet_name, dest_wb_path, dest_sheet_name):
+    """复制工作表数据并重命名"""
+    try:
+        source_wb = openpyxl.load_workbook(source_wb_path)
+        source_sheet = source_wb[source_sheet_name]
+    except FileNotFoundError:
+        print(f"错误：源文件 {source_wb_path} 未找到。")
+        return False
+    except KeyError:
+        print(f"错误：源工作簿中未找到名为 {source_sheet_name} 的工作表。")
+        return False
+    except openpyxl.utils.exceptions.InvalidFileException:
+        print(f"错误：源文件 {source_wb_path} 不是有效的 Excel 文件。")
+        return False
+    except Exception as e:
+        print(f"读取源文件时发生未知错误：{e}")
+        return False
+
+    try:
+        if os.path.exists(dest_wb_path):
+            dest_wb = openpyxl.load_workbook(dest_wb_path)
+            if dest_sheet_name in dest_wb.sheetnames:
+                dest_sheet = dest_wb[dest_sheet_name]
+                dest_sheet.delete_rows(1, dest_sheet.max_row)
+            else:
+                dest_sheet = dest_wb.create_sheet(dest_sheet_name)
+        else:
+            dest_wb = openpyxl.Workbook()
+            dest_sheet = dest_wb.create_sheet(dest_sheet_name)
+    except openpyxl.utils.exceptions.InvalidFileException:
+        print(f"错误：目标文件 {dest_wb_path} 不是有效的 Excel 文件。")
+        return False
+    except Exception as e:
+        print(f"创建或加载目标文件时发生错误: {e}")
+        return False
+
+    if dest_wb is None:
+        print("创建或加载目标文件失败，无法继续复制数据。")
+        return False
+
+    for row in source_sheet.iter_rows(min_row=1):
+        row_values = [cell.value for cell in row]
+        dest_sheet.append(row_values)
+
+    try:
+        if "Sheet1" in dest_wb.sheetnames:
+            sheet1 = dest_wb["Sheet1"]
+            sheet1.title = "表05终端工单一览表"
+        dest_wb.save(dest_wb_path)
+        return True
+    except Exception as e:
+        print(f"保存目标文件或重命名sheet时发生错误: {e}")
+        return False

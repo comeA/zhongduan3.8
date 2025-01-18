@@ -1,0 +1,50 @@
+import os
+import pandas as pd
+from modules.sn_data_process import process_sn_data, sort_and_save_sn_data
+from modules.vlookup_module import perform_vlookup_correct
+from modules.insert_columns import insert_columns
+from modules.excel_utils import copy_data_to_excel
+
+# ... (其他函数定义)
+
+if __name__ == "__main__":
+    print(f"当前工作目录：{os.getcwd()}")
+    print("欢迎使用终端数据处理程序！")
+
+    # ... (源文件和目标文件输入部分)
+
+    process_result, filtered_sheet_name, filtered_filepath = process_sn_data(source_filepath, source_sheet, dest_filepath, result_sheet)
+
+    if process_result:
+        try:
+            df = pd.read_excel(filtered_filepath, sheet_name=filtered_sheet_name, engine='openpyxl')
+        except Exception as e:
+            print(f"读取筛选后的excel失败：{e}")
+            exit()
+
+        # *** 正确处理并复制“业务号码”的代码 ***
+        while True:
+            import_template_filepath = get_file_path("请输入“导入模板.xlsx”文件路径：")
+            if os.path.splitext(import_template_filepath)[1].lower() != ".xlsx":
+                print("文件格式不正确，请选择xlsx文件")
+                continue
+            if not os.path.exists(import_template_filepath):
+                print("文件不存在，请检查路径")
+                continue
+            break
+        try:
+            business_numbers = df['业务号码'].astype(str).str.lstrip("'").tolist() #正确获取筛选后的业务号码并移除单引号
+            if not copy_data_to_excel(pd.Series(business_numbers), import_template_filepath, "Sheet1", "业务号码"): #将list转换为series，方便copy_data_to_excel函数处理
+                print("复制业务号码失败")
+                exit()
+            print("业务号码已成功复制到 导入模板.xlsx")
+        except KeyError:
+            print("错误：筛选后的数据中缺少 '业务号码' 列。")
+            exit()
+        except Exception as e:
+            print(f"处理业务号码或写入“导入模板.xlsx”文件时发生错误：{e}")
+            exit()
+
+        # ... (其他代码，包括插入新列和 VLOOKUP 操作)
+
+    # ... (其他代码)

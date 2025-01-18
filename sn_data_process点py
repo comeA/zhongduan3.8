@@ -1,0 +1,398 @@
+import pandas as pd
+import os
+from copy_sheet点py import copy_sheet_data
+# from copy_to_template import copy_data_to_template  # 此处不再需要此导入
+# from insert_columns import insert_columns  # 此处不再需要此导入
+
+def sort_and_save_sn_data(filepath, sheet_name, save_filepath):
+    """读取SN数据，根据rms_access_code排序并保存到新文件"""
+    # 此函数代码与之前完整版本相同
+    """将SN数据文件排序后保存到新文件，优先使用 openpyxl，其次 xlrd"""
+    try:
+        try:
+            df = pd.read_excel(sn_data_path, sheet_name=sn_sheet_name, engine='openpyxl')
+            print("使用 openpyxl 引擎读取 Excel 文件。")
+        except ImportError:
+            print("openpyxl 引擎未安装，尝试使用 xlrd 引擎。")
+            try:
+                df = pd.read_excel(sn_data_path, sheet_name=sn_sheet_name, engine='xlrd')
+                print("使用 xlrd 引擎读取 Excel 文件。")
+            except ImportError:
+                print("xlrd 引擎也未安装。请安装 openpyxl 或 xlrd。")
+                return False
+            except Exception as e:
+                print(f"使用 xlrd 引擎读取 Excel 文件出错：{e}")
+                return False
+        except Exception as e:
+            print(f"使用 openpyxl 引擎读取 Excel 文件出错：{e}")
+            return False
+
+        if df.empty:
+            print("警告：SN数据文件为空。")
+            return False
+
+        required_columns = ["rms_access_code", "ce_loid", "create_date"]
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            print(f"错误：SN数据文件缺少以下必要字段：{', '.join(missing_columns)}。")
+            return False
+
+        try:
+            df = df.sort_values(by="create_date", ascending=False)
+            df.to_excel(output_path, sheet_name="Sheet1", index=False)  # 保存时pandas会自动选择合适的engine
+            print(f"SN数据已按 create_date 降序排列并保存到 {output_path} 的 Sheet1 工作表中。")
+            return True
+        except Exception as e:
+            print(f"处理 SN 数据并保存到新文件时发生错误：{e}")
+            return False
+
+    except Exception as e:
+        print(f"读取或处理 Excel 文件时发生未知错误：{e}")
+        return False
+
+def get_loid_sn(filepath, sheet_name, business_numbers):
+    """根据业务号码在排序后的SN数据文件中查找对应的LOID（SN码）"""
+    # 此函数代码与之前完整版本相同
+    try:
+        try:
+            df = pd.read_excel(sn_data_path, sheet_name="Sheet1", engine='openpyxl')
+            print("使用 openpyxl 引擎读取 Excel 文件。")
+        except ImportError:
+            print("openpyxl 引擎未安装，尝试使用 xlrd 引擎。")
+            try:
+                df = pd.read_excel(sn_data_path, sheet_name="Sheet1", engine='xlrd')
+                print("使用 xlrd 引擎读取 Excel 文件。")
+            except ImportError:
+                print("xlrd 引擎也未安装。请安装 openpyxl 或 xlrd。")
+                return None
+            except Exception as e:
+                print(f"使用 xlrd 引擎读取 Excel 文件出错：{e}")
+                return None
+        except Exception as e:
+            print(f"使用 openpyxl 引擎读取 Excel 文件出错：{e}")
+            return None
+
+        if df.empty:
+            print("警告：排序后的SN数据文件为空。")
+            return None
+
+        if not all(col in df.columns for col in ["业务号码", "ce_loid"]):
+            print("错误：排序后的SN数据文件缺少业务号码或 ce_loid 列")
+            return None
+
+        df = df[["业务号码", "ce_loid"]].drop_duplicates(subset=['业务号码'], keep='first')
+        lookup_df = pd.DataFrame({"业务号码": business_numbers}).drop_duplicates(subset=['业务号码'], keep='first')
+
+        merged_df = pd.merge(lookup_df, df, on="业务号码", how="left")
+
+        loid_sn_list = merged_df["ce_loid"].tolist()
+        return loid_sn_list
+
+    except Exception as e:
+        print(f"读取或处理 Excel 文件时发生未知错误：{e}")
+        return None
+
+def process_sn_data(source_filepath, source_sheet, template_filepath, dest_filepath, result_sheet):
+    """处理主流程数据：先复制，后在目标文件上按正确条件筛选，并保存到新子表"""
+    print("-" * 30)
+    print("开始执行 process_sn_data 函数")
+    print(f"源文件路径：{source_filepath}, 源工作表：{source_sheet}")
+    print(f"目标文件路径：{dest_filepath}, 结果工作表：{result_sheet}")
+    print(f"模板文件路径：{template_filepath}")
+
+    try:
+        # 1. 复制工作表
+        print("开始复制工作表...")
+        if not copy_sheet_data(source_filepath, source_sheet, dest_filepath, result_sheet):
+            print("复制工作表数据失败！")
+            return False
+        print("工作表复制完成。")
+
+        # 2. 读取目标文件中的复制数据
+        print("尝试读取目标文件中的复制数据...")
+        try:
+            df = pd.read_excel(dest_filepath, sheet_name=result_sheet, engine='openpyxl')
+            print("目标文件数据读取成功。")
+            if not df.empty:
+                print(f"目标文件数据前5行:\n{df.head()}")
+            else:
+                print("警告：目标文件读取到的DataFrame为空")
+                return False
+        except ValueError as e:
+            print(f"读取目标文件数据失败：{e}。请检查工作表 '{result_sheet}' 是否存在。")
+            return False
+        except FileNotFoundError as e:
+            print(f"读取目标文件数据失败：{e}。请检查文件是否存在")
+            return False
+        except Exception as e:
+            print(f"读取目标文件时发生其他错误：{e}")
+            return False
+
+        if df.empty:
+            print(f"警告：目标文件{dest_filepath}的{result_sheet}工作表为空，无法进行后续操作。")
+            return False
+
+        # 3. 在目标文件的数据上进行 *正确* 的筛选
+        print("开始筛选数据...")
+        mask = (df['终端4级目录名称'].str.contains('A8C', na=False) | df['终端4级目录名称'].str.contains('光猫', na=False)) & \
+               (df['业务工单回单类型'].str.contains('在途', na=False)) & \
+               (~df['条形码'].isin(['', "'", "''", " ", None]))
+        filtered_df = df[mask].copy()  # 加上.copy()，避免SettingWithCopyWarning
+        print("数据筛选完成。")
+
+        if filtered_df.empty:
+            print("警告：筛选后数据为空，请检查筛选条件或目标文件数据。")
+            return False
+
+        # 4. 将筛选后的数据保存到 *新* 的工作表
+        new_sheet_name = result_sheet + "_筛选后"
+        print(f"尝试将筛选后的数据保存到新工作表：{new_sheet_name}...")
+        try:
+            with pd.ExcelWriter(dest_filepath, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+                filtered_df.to_excel(writer, sheet_name=new_sheet_name, index=False)
+            print(f"筛选后的数据已成功保存到工作表：{new_sheet_name}")
+        except Exception as e:
+            print(f"保存筛选后的数据时发生错误：{e}")
+            return False
+
+        return True
+
+    except Exception as e:
+        print(f"process_sn_data 函数执行过程中发生未知错误：{e}")
+        return False
+    finally:
+        print("process_sn_data 函数执行完毕")
+        print("-" * 30)
+
+
+
+
+
+'''
+
+import pandas as pd
+import os
+
+def sort_and_save_sn_data(sn_data_path, sn_sheet_name, output_path):
+    """将SN数据文件排序后保存到新文件，优先使用 openpyxl，其次 xlrd"""
+    try:
+        try:
+            df = pd.read_excel(sn_data_path, sheet_name=sn_sheet_name, engine='openpyxl')
+            print("使用 openpyxl 引擎读取 Excel 文件。")
+        except ImportError:
+            print("openpyxl 引擎未安装，尝试使用 xlrd 引擎。")
+            try:
+                df = pd.read_excel(sn_data_path, sheet_name=sn_sheet_name, engine='xlrd')
+                print("使用 xlrd 引擎读取 Excel 文件。")
+            except ImportError:
+                print("xlrd 引擎也未安装。请安装 openpyxl 或 xlrd。")
+                return False
+            except Exception as e:
+                print(f"使用 xlrd 引擎读取 Excel 文件出错：{e}")
+                return False
+        except Exception as e:
+            print(f"使用 openpyxl 引擎读取 Excel 文件出错：{e}")
+            return False
+
+        if df.empty:
+            print("警告：SN数据文件为空。")
+            return False
+
+        required_columns = ["rms_access_code", "ce_loid", "create_date"]
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        if missing_columns:
+            print(f"错误：SN数据文件缺少以下必要字段：{', '.join(missing_columns)}。")
+            return False
+
+        try:
+            df = df.sort_values(by="create_date", ascending=False)
+            df.to_excel(output_path, sheet_name="Sheet1", index=False) # 保存时pandas会自动选择合适的engine
+            print(f"SN数据已按 create_date 降序排列并保存到 {output_path} 的 Sheet1 工作表中。")
+            return True
+        except Exception as e:
+            print(f"处理 SN 数据并保存到新文件时发生错误：{e}")
+            return False
+
+    except Exception as e:
+        print(f"读取或处理 Excel 文件时发生未知错误：{e}")
+        return False
+
+def get_loid_sn(sn_data_path, business_numbers):
+    """从SN数据文件中获取LOID（SN码），根据业务号码进行匹配，优先使用 openpyxl，其次 xlrd"""
+    try:
+        try:
+            df = pd.read_excel(sn_data_path, sheet_name="Sheet1", engine='openpyxl')
+            print("使用 openpyxl 引擎读取 Excel 文件。")
+        except ImportError:
+            print("openpyxl 引擎未安装，尝试使用 xlrd 引擎。")
+            try:
+                df = pd.read_excel(sn_data_path, sheet_name="Sheet1", engine='xlrd')
+                print("使用 xlrd 引擎读取 Excel 文件。")
+            except ImportError:
+                print("xlrd 引擎也未安装。请安装 openpyxl 或 xlrd。")
+                return None
+            except Exception as e:
+                print(f"使用 xlrd 引擎读取 Excel 文件出错：{e}")
+                return None
+        except Exception as e:
+            print(f"使用 openpyxl 引擎读取 Excel 文件出错：{e}")
+            return None
+
+        if df.empty:
+            print("警告：排序后的SN数据文件为空。")
+            return None
+
+        if not all(col in df.columns for col in ["业务号码", "ce_loid"]):
+            print("错误：排序后的SN数据文件缺少业务号码或 ce_loid 列")
+            return None
+
+        df = df[["业务号码", "ce_loid"]].drop_duplicates(subset=['业务号码'], keep='first')
+        lookup_df = pd.DataFrame({"业务号码": business_numbers}).drop_duplicates(subset=['业务号码'], keep='first')
+
+        merged_df = pd.merge(lookup_df, df, on="业务号码", how="left")
+
+        loid_sn_list = merged_df["ce_loid"].tolist()
+        return loid_sn_list
+
+    except Exception as e:
+        print(f"读取或处理 Excel 文件时发生未知错误：{e}")
+        return None
+
+'''
+
+
+
+# import pandas as pd
+# import os
+# import openpyxl
+# from openpyxl.utils.dataframe import dataframe_to_rows
+# import tempfile
+# import shutil
+#
+# def process_sn_data(sn_data_path, sn_sheet_name):
+#     """处理业务号码-LOID（SN码）数据文件，包含引擎判断,并复制数据到Sheet1（最终修正版）"""
+#     try:
+#         try:
+#             df = pd.read_excel(sn_data_path, sheet_name=sn_sheet_name, engine='openpyxl')
+#             engine_used = 'openpyxl'
+#         except ValueError as e:
+#             if "Unknown engine: openpyxl" in str(e):
+#                 print("检测到openpyxl引擎错误，尝试使用xlrd引擎。")
+#                 try:
+#                     df = pd.read_excel(sn_data_path, sheet_name=sn_sheet_name, engine='xlrd')
+#                     engine_used = 'xlrd'
+#                 except ImportError:
+#                     print("xlrd引擎未安装，请使用：pip install xlrd")
+#                     return False
+#                 except Exception as e:
+#                     print(f"使用xlrd引擎读取excel文件出错：{e}。请检查是否为xlsx文件，xlrd2.0以上版本不再支持xlsx文件读取，请安装openpyxl库或者odfpy库。")
+#                     return False
+#             else:
+#                 print(f"读取 Excel 文件时发生值错误：{e}。")
+#                 return False
+#     except FileNotFoundError:
+#         print(f"错误：SN数据文件 {sn_data_path} 未找到。")
+#         return False
+#     except Exception as e:
+#         print(f"读取SN数据文件出错：{e}")
+#         return False
+#
+#     if df.empty:
+#         print("警告：SN数据文件为空。")
+#         return False
+#
+#     required_columns = ["rms_access_code", "ce_loid", "create_date"]
+#     missing_columns = [col for col in required_columns if col not in df.columns]
+#     if missing_columns:
+#         print(f"错误：SN数据文件缺少以下必要字段：{', '.join(missing_columns)}。")
+#         return False
+#
+#     try:
+#         # 根据 create_date 降序排列
+#         df = df.sort_values(by="create_date", ascending=False)
+#
+#         # 保存到 Sheet1 (最终修正：使用临时文件和 shutil 复制)
+#         try:
+#             with tempfile.NamedTemporaryFile(suffix=".xlsx", delete=False) as tmp:
+#                 tmp_path = tmp.name
+#                 wb = openpyxl.Workbook()
+#                 ws = wb.active
+#                 ws.title = 'Sheet1'
+#                 for r in dataframe_to_rows(df, index=False, header=True):
+#                     ws.append(r)
+#                 wb.save(tmp_path)
+#             shutil.move(tmp_path, sn_data_path) #使用shutil.move覆盖原文件，解决权限问题
+#             print(f"SN数据已按create_date降序排列并保存到{sn_data_path}的Sheet1工作表中。(使用{engine_used}引擎读取)")
+#             return True
+#         except PermissionError as e:
+#             print(f"错误：没有写入权限到文件 {sn_data_path}。请检查文件是否被占用或是否为只读。\n详细错误信息：{e}")
+#             return False
+#         except OSError as e:
+#             print(f"错误：保存文件 {sn_data_path} 时发生操作系统错误。\n详细错误信息：{e}")
+#             return False
+#         except Exception as e:
+#             print(f"保存文件时发生未知错误：{e}")
+#             return False
+#     except Exception as e:
+#         print(f"处理SN数据并保存时发生错误：{e}")
+#         return False
+#
+# def get_loid_sn(sn_data_path, business_numbers):
+#     """从SN数据文件中获取LOID（SN码），根据业务号码进行匹配,包含引擎判断"""
+#     sn_df = None
+#     try:
+#         try:
+#             # sn_df = pd.read_excel(sn_data_path, sheet_name="Sheet1", engine='openpyxl')
+#             df = pd.read_excel(sn_data_path, sheet_name="Sheet1")  # 简化读取
+#         except FileNotFoundError:
+#             print(f"错误：排序后的SN数据文件 {sn_data_path} 未找到。请检查是否已执行排序操作。")
+#             return None
+#         except Exception as e:
+#             print(f"读取排序后的SN数据文件出错：{e}")
+#             return None
+#             engine_used = 'openpyxl'
+#         except ValueError as e:
+#             if "Unknown engine: openpyxl" in str(e):
+#                 print("检测到openpyxl引擎错误，尝试使用xlrd引擎。")
+#                 try:
+#                     sn_df = pd.read_excel(sn_data_path, sheet_name="Sheet1", engine='xlrd')
+#                     engine_used = 'xlrd'
+#                 except ImportError:
+#                     print("xlrd引擎未安装，请使用：pip install xlrd")
+#                     return None
+#                 except Exception as e:
+#                     print(f"使用xlrd引擎读取excel文件出错：{e}。请检查是否为xlsx文件，xlrd2.0以上版本不再支持xlsx文件读取，请安装openpyxl库或者odfpy库。")
+#                     return None
+#             else:
+#                 print(f"读取 Excel 文件时发生值错误：{e}。")
+#                 return None
+#     except FileNotFoundError:
+#         print(f"错误：SN数据文件 {sn_data_path} 未找到。")
+#         return None
+#     except Exception as e:
+#         print(f"读取SN数据文件出错：{e}")
+#         return None
+#     try:
+#         wb = openpyxl.load_workbook(sn_data_path)
+#         print(f"SN数据文件中的工作表：{wb.sheetnames}") # 打印所有工作表名称
+#     except Exception as e:
+#         print(f"加载工作簿出错：{e}")
+#         return None
+#
+#     if sn_df is None or sn_df.empty:
+#         print("警告：SN数据文件读取失败或为空。")
+#         return None
+#
+#     if not all(col in sn_df.columns for col in ["rms_access_code", "ce_loid"]):
+#         print("错误：SN数据文件缺少rms_access_code或ce_loid列")
+#         return None
+#
+#     sn_df = sn_df.rename(columns={"rms_access_code": "业务号码"})
+#     sn_df = sn_df[["业务号码", "ce_loid"]].drop_duplicates(subset=['业务号码'], keep='first')
+#
+#     lookup_df = pd.DataFrame({"业务号码": business_numbers}).drop_duplicates(subset=['业务号码'], keep='first')
+#
+#     merged_df = pd.merge(lookup_df, sn_df, on="业务号码", how="left")
+#
+#     loid_sn_list = merged_df["ce_loid"].tolist()
+#     return loid_sn_list

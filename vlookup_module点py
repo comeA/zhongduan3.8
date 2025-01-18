@@ -1,0 +1,33 @@
+import pandas as pd
+
+def perform_vlookup(df, sn_df, business_number_column_name="业务号码", loid_sn_column_name="LOID（SN码）"):
+    """
+    执行 VLOOKUP 操作。
+
+    Args:
+        df: 目标 DataFrame。
+        sn_df: SN 数据 DataFrame。
+        business_number_column_name: 目标 DataFrame 中用于 VLOOKUP 的列名（默认为“业务号码”）。
+        loid_sn_column_name: 目标 DataFrame 中用于存储 VLOOKUP 结果的列名（默认为“LOID（SN码）”）。
+
+    Returns:
+        修改后的目标 DataFrame，如果发生错误则返回 None。
+    """
+    if business_number_column_name not in df.columns:
+        print(f"目标文件中不存在列名{business_number_column_name}，请检查目标文件")
+        return None
+    if loid_sn_column_name not in df.columns:
+        print(f"目标文件中不存在列名{loid_sn_column_name}，请检查目标文件")
+        return None
+
+    if 'rms_access_code' not in sn_df.columns or 'ce_loid' not in sn_df.columns:
+        print("SN码文件缺少rms_access_code或者ce_loid列，请检查")
+        return None
+
+    if sn_df['rms_access_code'].duplicated().any():
+        print("警告：SN码文件中'rms_access_code'列存在重复值，将删除重复值。")
+        sn_df.drop_duplicates(subset=['rms_access_code'], inplace=True)
+
+    df[loid_sn_column_name] = df[business_number_column_name].map(sn_df.set_index('rms_access_code')['ce_loid'])
+    df[loid_sn_column_name].fillna("", inplace=True)
+    return df

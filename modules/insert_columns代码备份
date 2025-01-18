@@ -1,0 +1,210 @@
+
+'''
+import pandas as pd
+import openpyxl
+from openpyxl.styles import PatternFill
+
+def insert_columns(wb_path, sheet_name):
+    """插入新列并填充表头颜色"""
+    print("-" * 30)
+    print(f"开始执行 insert_columns 函数")
+    print(f"目标文件路径：{wb_path}, 目标工作表：{sheet_name}")
+
+    try:
+        yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+
+        # 明确指定要插入的列的顺序和名称
+        new_columns = [
+            ("ISCM终端MAC地址-注册状态", "ISCM终端MAC地址"),
+            #("精简型号", "设备名称"),
+            ("是否出库在用一致", "设备名称"),
+            ("目前在用型号2", "设备名称"),
+            #("是否出库在用一致", "设备名称"),
+            ("精简型号", "设备名称"),
+            ("LOID（SN码）", "业务号码")
+        ]
+
+        # 读取Excel文件到pandas DataFrame
+        try:
+            df = pd.read_excel(wb_path, sheet_name=sheet_name, engine='openpyxl')
+        except Exception as e:
+            print(f"读取excel失败：{e}")
+            return False
+
+        # 在DataFrame中插入新列
+        for new_col, original_col in new_columns:
+            if new_col not in df.columns:
+                try:
+                    insert_index = df.columns.get_loc(original_col) + 1
+                    df.insert(insert_index, new_col, "")  # 插入空列
+                    print(f"成功插入列：{new_col}")
+                except KeyError as e:
+                    print(f"找不到原始列{original_col}")
+                    return False
+                except Exception as e:
+                    print(f"插入列失败{e}")
+                    return False
+
+        # 将修改后的DataFrame写回Excel文件 *这是关键步骤*
+        try:
+            with pd.ExcelWriter(wb_path, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+                df.to_excel(writer, sheet_name=sheet_name, index=False)
+        except Exception as e:
+            print(f"保存excel失败:{e}")
+            return False
+
+        # 重新加载工作簿以应用更改 *这是关键步骤*
+        wb = openpyxl.load_workbook(wb_path)
+        sheet = wb[sheet_name]
+
+        # 自动查找表头行
+        for row_index in range(1, 11):  # 假设表头在前10行内，可根据实际情况调整
+            header_row = sheet[row_index]
+            header_values = [str(cell.value).strip() if cell.value is not None else "" for cell in header_row]
+            if all(original_col in header_values for _, original_col in new_columns):
+                print(f"在第{row_index}行找到表头。")
+                header_row_index = row_index
+                break
+        else:
+            print("错误：找不到包含原始列名的表头行，无法填充颜色。")
+            return False
+
+        # 填充表头颜色(现在可以正确找到新列了)
+        try:
+            header_row = sheet[header_row_index]
+            header_values = [str(cell.value).strip() if cell.value is not None else "" for cell in header_row]
+            for new_col, _ in new_columns:
+                try:
+                    col_index = header_values.index(new_col)
+                    header_row[col_index].fill = yellow_fill
+                    print(f"成功填充表头颜色：{new_col}")
+                except ValueError:
+                    print(f"警告：在表头中找不到列 '{new_col}'，无法填充颜色。")
+        except Exception as e:
+            print(f"填充颜色失败：{e}")
+            return False
+
+        # 保存工作簿 *这是非常重要的步骤*
+        try:
+            wb.save(wb_path)
+        except Exception as e:
+            print(f"保存工作簿失败：{e}")
+            return False
+
+        print(f"insert_columns 函数执行完毕")
+        print("-" * 30)
+        return True
+    except Exception as e:
+        print(f"insert_columns函数执行过程中发生未知错误：{e}")
+        return False
+    finally:
+        print(f"insert_columns 函数执行完毕")
+        print("-" * 30)
+'''
+
+
+
+'''
+import pandas as pd
+import openpyxl
+from openpyxl.styles import PatternFill
+
+def insert_columns(wb_path, sheet_name):
+    """
+    使用 pandas 插入新列并填充表头颜色，包含引擎判断。
+
+    参数：
+        wb_path (str): Excel 文件路径。
+        sheet_name (str): 工作表名称。
+
+    返回值：
+        bool: 成功返回 True，失败返回 False。
+    """
+    try:
+        # 尝试使用 openpyxl 引擎读取 Excel 文件
+        try:
+            df = pd.read_excel(wb_path, sheet_name=sheet_name, engine='openpyxl')
+            engine_used = 'openpyxl'
+            print("使用 openpyxl 引擎读取 Excel 文件成功。")
+        except ValueError as e:
+            if "Unknown engine: openpyxl" in str(e):
+                print("检测到 openpyxl 引擎错误，尝试使用 xlrd 引擎。")
+                try:
+                    df = pd.read_excel(wb_path, sheet_name=sheet_name, engine='xlrd')
+                    engine_used = 'xlrd'
+                    print("使用 xlrd 引擎读取 Excel 文件成功。")
+                except ImportError:
+                    print("xlrd 引擎未安装，请使用：pip install xlrd")
+                    return False
+                except Exception as e:
+                    print(f"使用 xlrd 引擎读取 excel 文件出错：{e}")
+                    return False
+            else:
+                print(f"读取 Excel 文件时发生值错误：{e}。")
+                return False
+        except FileNotFoundError:
+            print(f"错误：文件 {wb_path} 未找到。")
+            return False
+        except openpyxl.utils.exceptions.InvalidFileException:
+            print(f"错误：文件 {wb_path} 不是有效的 Excel 文件。")
+            return False
+        except Exception as e:
+            print(f"读取 excel 文件出错：{e}")
+            return False
+
+        # 插入列，使用更清晰的列表定义，并判断列是否已存在
+        new_columns = [
+            ("ISCM终端MAC地址-注册状态", "ISCM终端MAC地址"),
+            ("精简型号", "设备名称"),
+            ("目前在用型号2", "设备名称"),
+            ("是否出库在用一致", "设备名称"),
+            ("LOID（SN码）", "业务号码"),
+        ]
+
+        for new_col, insert_after in new_columns:
+            if new_col not in df.columns:
+                try:
+                    df.insert(df.columns.get_loc(insert_after) + 1, new_col, "")
+                    print(f"成功插入列：{new_col}")
+                except KeyError:
+                    print(f"错误：找不到插入位置 '{insert_after}' 列，无法插入'{new_col}'列。请检查Excel文件列名。")
+                    return False
+            else:
+                print(f"警告：列 '{new_col}' 已经存在，跳过插入。")
+
+        try:
+            book = openpyxl.load_workbook(wb_path)
+            sheet = book[sheet_name]
+            yellow_fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
+
+            # 填充表头颜色，使用更高效的查找方式
+            header_row = sheet[1]
+            header_values = [cell.value for cell in header_row]
+            for new_col in [col[0] for col in new_columns]:
+                try:
+                    col_index = header_values.index(new_col)
+                    header_row[col_index].fill = yellow_fill
+                except ValueError:
+                    print(f"警告：在表头中找不到列 '{new_col}'，无法填充颜色。")
+
+            book.save(wb_path)
+
+            # 保存 DataFrame，根据读取时使用的引擎选择保存引擎
+            if engine_used == 'openpyxl':
+                with pd.ExcelWriter(wb_path, engine='openpyxl', mode='a', if_sheet_exists='overlay') as writer:
+                    df.to_excel(writer, sheet_name=sheet_name, index=False)
+            else:
+                with pd.ExcelWriter(wb_path, mode='a', if_sheet_exists='overlay') as writer:
+                    df.to_excel(writer, sheet_name=sheet_name, index=False)
+
+            print(f"已在 {wb_path} 的 {sheet_name} 工作表中插入新列并填充表头颜色。(使用 {engine_used} 引擎读取)")
+            return True
+
+        except Exception as e:
+            print(f"写入 Excel 文件时发生错误：{e}")
+            return False
+
+    except Exception as e:
+        print(f"插入新列时发生顶层错误：{e}")
+        return False
+'''
