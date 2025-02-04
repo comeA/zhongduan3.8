@@ -3,19 +3,30 @@ import pandas as pd
 def process_cpe_export_data(cpe_export_filepath):
     """处理 cpeExport 数据，插入 LOID 列。"""
     try:
-        cpe_df = pd.read_excel(cpe_export_filepath, sheet_name="sheet")  # 读取 cpeExport 数据
+        cpe_df = pd.read_excel(cpe_export_filepath, sheet_name="sheet", engine='openpyxl')  # 读取 cpeExport 数据
         cpe_df.insert(0, "LOID_New", cpe_df["LOID"])  # 插入 LOID 列
         cpe_df.to_excel(cpe_export_filepath, sheet_name="sheet", index=False)  # 保存修改后的数据
         return True
     except Exception as e:
         print(f"处理 cpeExport 数据出错：{e}")
         return False
+    # try:
+    #     cpe_df = pd.read_excel(cpe_export_filepath, sheet_name="sheet")  # 读取 cpeExport 数据
+    #     cpe_df.insert(0, "LOID_New", cpe_df["LOID"])  # 插入 LOID 列
+    #     cpe_df.to_excel(cpe_export_filepath, sheet_name="sheet", index=False)  # 保存修改后的数据
+    #     return True
+    # except Exception as e:
+    #     print(f"处理 cpeExport 数据出错：{e}")
+    #     return False
 
 def update_terminal_data(terminal_filepath, cpe_export_filepath):
     """更新终端出库报表数据，执行 VLOOKUP。"""
     try:
-        terminal_df = pd.read_excel(terminal_filepath, sheet_name="终端出库报表_筛选后1_插入后1_匹配SN")  # 读取终端出库报表数据
-        cpe_df = pd.read_excel(cpe_export_filepath, sheet_name="sheet")  # 读取 cpeExport 数据
+        # terminal_df = pd.read_excel(terminal_filepath, sheet_name="终端出库报表_筛选后1_插入后1_匹配SN")  # 读取终端出库报表数据
+        # cpe_df = pd.read_excel(cpe_export_filepath, sheet_name="sheet")  # 读取 cpeExport 数据
+        terminal_df = pd.read_excel(terminal_filepath, sheet_name="终端出库报表_筛选后1_插入后1_匹配SN", engine='openpyxl')  # 读取终端出库报表数据
+        cpe_df = pd.read_excel(cpe_export_filepath, sheet_name="sheet", engine='openpyxl')  # 读取 cpeExport 数据
+
 
         # # 测试：打印两个 DataFrame 的信息，以便确认它们是否包含所需的列：
         # print("terminal_df:")

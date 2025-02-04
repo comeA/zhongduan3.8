@@ -14,7 +14,7 @@ import openpyxl
 def copy_business_numbers_to_template(df, template_filepath):
     try:
         business_numbers = df['业务号码'].astype(str).str.replace("'", "", regex=False).tolist()
-        print("business_numbers:", business_numbers)
+        #print("business_numbers:", business_numbers)
 
         try:
             template_wb = openpyxl.load_workbook(template_filepath)
@@ -44,7 +44,7 @@ def copy_business_numbers_to_template(df, template_filepath):
 
             all_rows[row_index][col_index] = number
 
-        print("all_rows:", all_rows) # 打印 all_rows
+        #print("all_rows:", all_rows) # 打印 all_rows
 
         # if all_rows:
         #     if not excel_utils.copy_data_to_excel(all_rows, template_filepath, "文件名称"):
