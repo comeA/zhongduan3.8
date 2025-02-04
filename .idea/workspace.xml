@@ -2,9 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="146da055-b5aa-42ed-82a7-1eefe43071e0" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/modules/cpe_processing.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/modules/cpe_processing.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/cpe_processing.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -107,11 +106,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="main.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="main.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="348">
-              <caret line="176" column="48" selection-start-line="176" selection-start-column="48" selection-end-line="176" selection-end-column="48" />
+              <caret line="152" column="37" lean-forward="true" selection-start-line="152" selection-start-column="37" selection-end-line="152" selection-end-column="37" />
               <folding>
                 <element signature="e#31#40#0" expanded="true" />
               </folding>
@@ -119,11 +118,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="cpe_processing.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="cpe_processing.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/modules/cpe_processing.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="168">
-              <caret line="36" column="22" selection-start-line="36" selection-start-column="4" selection-end-line="36" selection-end-column="22" />
+            <state relative-caret-position="237">
+              <caret line="21" column="35" lean-forward="true" selection-start-line="21" selection-start-column="35" selection-end-line="21" selection-end-column="35" />
             </state>
           </provider>
         </entry>
@@ -166,9 +165,9 @@
       <find>columns</find>
       <find>terminal_dfterminal_df</find>
       <find>business_numbers</find>
+      <find>get_terminal_model</find>
       <find>terminal_df</find>
       <find>update_terminal_data</find>
-      <find>get_terminal_model</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -376,15 +375,16 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
+    <editor active="true" />
     <layout>
       <window_info anchor="bottom" id="TODO" order="6" weight="0.32972974" />
       <window_info anchor="bottom" id="Event Log" order="12" side_tool="true" />
       <window_info anchor="bottom" id="Database Changes" order="9" show_stripe_button="false" />
       <window_info anchor="bottom" id="Version Control" order="8" />
       <window_info anchor="bottom" id="Python Console" order="10" weight="0.32972974" />
-      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.32467532" />
+      <window_info anchor="bottom" id="Run" order="2" visible="true" weight="0.32467532" />
       <window_info anchor="bottom" id="Terminal" order="11" weight="0.42378378" />
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.28624734" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.28624734" />
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
       <window_info anchor="right" id="Database" order="4" />
       <window_info anchor="right" id="SciView" order="3" />
@@ -774,20 +774,20 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/modules/cpe_processing.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="168">
-          <caret line="36" column="22" selection-start-line="36" selection-start-column="4" selection-end-line="36" selection-end-column="22" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/main.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="348">
-          <caret line="176" column="48" selection-start-line="176" selection-start-column="48" selection-end-line="176" selection-end-column="48" />
+          <caret line="152" column="37" lean-forward="true" selection-start-line="152" selection-start-column="37" selection-end-line="152" selection-end-column="37" />
           <folding>
             <element signature="e#31#40#0" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/modules/cpe_processing.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="237">
+          <caret line="21" column="35" lean-forward="true" selection-start-line="21" selection-start-column="35" selection-end-line="21" selection-end-column="35" />
         </state>
       </provider>
     </entry>

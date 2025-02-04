@@ -17,11 +17,11 @@ def update_terminal_data(terminal_filepath, cpe_export_filepath):
         terminal_df = pd.read_excel(terminal_filepath, sheet_name="终端出库报表_筛选后1_插入后1_匹配SN")  # 读取终端出库报表数据
         cpe_df = pd.read_excel(cpe_export_filepath, sheet_name="sheet")  # 读取 cpeExport 数据
 
-        # 测试：打印两个 DataFrame 的信息，以便确认它们是否包含所需的列：
-        print("terminal_df:")
-        print(terminal_df.head())
-        print("cpe_df:")
-        print(cpe_df.head())
+        # # 测试：打印两个 DataFrame 的信息，以便确认它们是否包含所需的列：
+        # print("terminal_df:")
+        # print(terminal_df.head())
+        # print("cpe_df:")
+        # print(cpe_df.head())
 
         # 执行 VLOOKUP
         terminal_df["目前在用型号2"] = terminal_df["LOID（SN码）"].apply(lambda x: get_terminal_model(x, cpe_df))
