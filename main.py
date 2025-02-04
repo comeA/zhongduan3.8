@@ -15,6 +15,7 @@ import modules.vlookup_module as vlookup_module
 import modules.insert_columns as insert_columns
 import modules.utils as utils
 import modules.copy_to_template as copy_to_template
+import modules.cpe_processing as cpe_processing  # 导入 cpe_processing 模块
 
 # 从 utils 模块导入需要的函数，并赋予更具描述性的别名
 get_file_path = utils.get_file_path
@@ -160,6 +161,24 @@ def main():
                                                                   "CPEID(OUI和序列号必须填写)"):
                                 print("复制 ISCM 终端 MAC 地址到 importCPEID2ExportMAC.xlsx 失败")
                                 return
+
+                            ##处理 cpeExport 数据并更新终端出库报表 (移到这里)
+                            continue_cpe_processing = get_yes_no_input("是否继续处理目前在用型号2？(y/n): ")
+                            if continue_cpe_processing == 'y':
+                                cpe_export_filepath = get_file_path("请输入 cpeExport 文件路径：")
+                                if cpe_processing.process_cpe_export_data(cpe_export_filepath):
+                                    print("cpeExport 数据处理成功！")
+                                else:
+                                    print("cpeExport 数据处理失败！")
+
+                                if cpe_processing.update_terminal_data(filtered_filepath, cpe_export_filepath):
+                                    print("终端出库报表数据更新成功！")
+                                else:
+                                    print("终端出库报表数据更新失败！")
+                            else:
+                                print("跳过处理目前在用型号2的操作。")
+
+                            ##处理 cpeExport 数据并更新终端出库报表 (移到这里)
 
                         except Exception as e:
                             print(f"保存匹配结果到目标文件时发生错误：{e}")
