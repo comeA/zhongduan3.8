@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="146da055-b5aa-42ed-82a7-1eefe43071e0" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/modules/business_number_utils.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/business_number_utils.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/modules/cpe_processing.py" beforeDir="false" afterPath="$PROJECT_DIR$/modules/cpe_processing.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -15,7 +15,7 @@
   <component name="CoverageDataManager">
     <SUITE FILE_PATH="coverage/V2$main.coverage" NAME="main Coverage Results" MODIFIED="1737305801107" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/V2$py_test_in_test_openpyxl_py.coverage" NAME="py.test in test_openpyxl.py Coverage Results" MODIFIED="1737374033625" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
-    <SUITE FILE_PATH="coverage/PycharmProjectsNews$main.coverage" NAME="main Coverage Results" MODIFIED="1738690894282" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/PycharmProjectsNews$main.coverage" NAME="main Coverage Results" MODIFIED="1738693399061" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/V2$test_openpyxl.coverage" NAME="test_openpyxl Coverage Results" MODIFIED="1737371691763" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/$test_openpyxl.coverage" NAME="test_openpyxl Coverage Results" MODIFIED="1737275908675" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
     <SUITE FILE_PATH="coverage/V2$test_openpyxl__1_.coverage" NAME="test_openpyxl (1) Coverage Results" MODIFIED="1737374018641" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$/my_new_venv" />
@@ -76,8 +76,8 @@
       <file leaf-file-name="main.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="279">
-              <caret line="56" column="12" lean-forward="true" selection-start-line="56" selection-start-column="12" selection-end-line="56" selection-end-column="12" />
+            <state relative-caret-position="46">
+              <caret line="28" column="14" lean-forward="true" selection-start-line="28" selection-start-column="14" selection-end-line="28" selection-end-column="14" />
               <folding>
                 <element signature="e#31#40#0" expanded="true" />
               </folding>
@@ -88,8 +88,8 @@
       <file leaf-file-name="business_number_utils.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/modules/business_number_utils.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="332">
-              <caret line="48" column="22" lean-forward="true" selection-start-line="48" selection-start-column="22" selection-end-line="48" selection-end-column="22" />
+            <state relative-caret-position="253">
+              <caret line="11" column="15" lean-forward="true" selection-end-line="219" selection-end-column="3" />
               <folding>
                 <element signature="e#107#138#0" expanded="true" />
               </folding>
@@ -121,8 +121,11 @@
       <file leaf-file-name="cpe_processing.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/modules/cpe_processing.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="230">
-              <caret line="10" column="39" lean-forward="true" selection-start-line="10" selection-start-column="39" selection-end-line="10" selection-end-column="39" />
+            <state relative-caret-position="138">
+              <caret line="24" column="19" lean-forward="true" selection-start-line="24" selection-start-column="19" selection-end-line="24" selection-end-column="19" />
+              <folding>
+                <element signature="e#0#19#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -138,9 +141,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find />
-      <find>sheet.delete_rows</find>
-      <find>delete_rows</find>
       <find>业务号码已成功复制到</find>
       <find>process_data</find>
       <find>copy_business_numbers_to_excel_with_header_split_columns</find>
@@ -154,8 +154,8 @@
       <find>importCPEID2ExportSN.xlsx</find>
       <find>insert_cols_before_vlookup</find>
       <find>sort_and_save_sn_data</find>
-      <find />
-      <find />
+      <find>if continue_processing == 'y':</find>
+      <find>if not copy_data_to_excel_with_header(df['ISCM终端MAC地址'], mac_export_filepath, &quot;Sheet1&quot;, &quot;CPEID(OUI和序列号必须填写)&quot;):</find>
       <find>copy_data_to_excel_with_header(df['ISCM终端MAC地址']</find>
       <find>merge</find>
       <find>columns</find>
@@ -164,10 +164,13 @@
       <find>update_terminal_data</find>
       <find>copy_data_to_excel_with_header</find>
       <find>terminal_df</find>
-      <find />
-      <find>process_cpe_export_data</find>
+      <find>sort_and_save_sn_data 函数执行完毕</find>
       <find>business_numbers</find>
       <find>all_rows</find>
+      <find>工作表 'Sheet1' 未找到</find>
+      <find>cpe_export_filepath</find>
+      <find>process_cpe_export_data</find>
+      <find>cpe_df.iloc</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -187,8 +190,8 @@
         <option value="$PROJECT_DIR$/modules/copy_to_template.py" />
         <option value="$PROJECT_DIR$/modules/excel_utils.py" />
         <option value="$PROJECT_DIR$/main.py" />
-        <option value="$PROJECT_DIR$/modules/cpe_processing.py" />
         <option value="$PROJECT_DIR$/modules/business_number_utils.py" />
+        <option value="$PROJECT_DIR$/modules/cpe_processing.py" />
       </list>
     </option>
   </component>
@@ -198,7 +201,7 @@
     <detection-done>true</detection-done>
     <sorting>DEFINITION_ORDER</sorting>
   </component>
-  <component name="ProjectFrameBounds" extendedState="7">
+  <component name="ProjectFrameBounds" extendedState="6">
     <option name="x" value="24" />
     <option name="y" value="-21" />
     <option name="width" value="1346" />
@@ -377,9 +380,9 @@
       <window_info anchor="bottom" id="Database Changes" order="9" show_stripe_button="false" />
       <window_info anchor="bottom" id="Version Control" order="8" />
       <window_info anchor="bottom" id="Python Console" order="10" weight="0.32972974" />
-      <window_info anchor="bottom" id="Run" order="2" visible="true" weight="0.32467532" />
+      <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.32467532" />
       <window_info anchor="bottom" id="Terminal" order="11" weight="0.42378378" />
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.28624734" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.28624734" />
       <window_info anchor="bottom" id="Docker" order="7" show_stripe_button="false" />
       <window_info anchor="right" id="Database" order="4" />
       <window_info anchor="right" id="SciView" order="3" />
@@ -765,30 +768,33 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/main.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="279">
-          <caret line="56" column="12" lean-forward="true" selection-start-line="56" selection-start-column="12" selection-end-line="56" selection-end-column="12" />
-          <folding>
-            <element signature="e#31#40#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/modules/business_number_utils.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="332">
-          <caret line="48" column="22" lean-forward="true" selection-start-line="48" selection-start-column="22" selection-end-line="48" selection-end-column="22" />
+        <state relative-caret-position="253">
+          <caret line="11" column="15" lean-forward="true" selection-end-line="219" selection-end-column="3" />
           <folding>
             <element signature="e#107#138#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/main.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="46">
+          <caret line="28" column="14" lean-forward="true" selection-start-line="28" selection-start-column="14" selection-end-line="28" selection-end-column="14" />
+          <folding>
+            <element signature="e#31#40#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/modules/cpe_processing.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="230">
-          <caret line="10" column="39" lean-forward="true" selection-start-line="10" selection-start-column="39" selection-end-line="10" selection-end-column="39" />
+        <state relative-caret-position="138">
+          <caret line="24" column="19" lean-forward="true" selection-start-line="24" selection-start-column="19" selection-end-line="24" selection-end-column="19" />
+          <folding>
+            <element signature="e#0#19#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
