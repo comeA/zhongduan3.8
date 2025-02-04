@@ -100,20 +100,20 @@ def copy_data_to_excel(data, template_filepath, sheet_name, header_row=1):  # �
 #         return False
 
 
-
+# #这个copy_data_to_excel_with_header是sn码和mac码复制到对应的文件
 def copy_data_to_excel_with_header(data, filename, sheetname, header_name):
-    """将数据复制到 Excel 文件的指定工作表，包含表头。"""
+    """将数据复制到 Excel 文件的指定工作表，包含表头，并清空原有数据（除了表头）。"""
     try:
         workbook = openpyxl.load_workbook(filename)
         sheet = workbook[sheetname]
 
-        # 清空数据，包括表头
-        # if sheet.max_row >= 1:
-        #     sheet.delete_rows(1, sheet.max_row)
+        # 清空除表头外的数据
+        if sheet.max_row > 1:  # 确保有数据需要删除
+            sheet.delete_rows(2, sheet.max_row)  # 从第二行开始删除，保留表头
 
         sheet.cell(row=1, column=1).value = header_name  # 写入表头
 
-        if data:
+        if not data.empty:
             for i, value in enumerate(data):
                 sheet.cell(row=i + 2, column=1).value = value
 
@@ -127,7 +127,64 @@ def copy_data_to_excel_with_header(data, filename, sheetname, header_name):
         return False
     except Exception as e:
         print(f"复制数据到 Excel 时发生错误：{e}")
+        import traceback
+        traceback.print_exc()
         return False
+# def copy_data_to_excel_with_header(data, filename, sheetname, header_name):
+#     """将数据复制到 Excel 文件的指定工作表，包含表头。这个是sn码和mac码复制到对应的文件"""
+#     try:
+#         workbook = openpyxl.load_workbook(filename)
+#         sheet = workbook[sheetname]
+#
+#         sheet.cell(row=1, column=1).value = header_name  # 写入表头
+#
+#         if not data.empty:  # 使用 .empty 属性判断 Series 是否为空
+#             for i, value in enumerate(data):
+#                 sheet.cell(row=i + 2, column=1).value = value
+#
+#         workbook.save(filename)
+#         return True
+#     except FileNotFoundError:
+#         print(f"文件 {filename} 未找到。")
+#         return False
+#     except KeyError:
+#         print(f"工作表 {sheetname} 未找到。")
+#         return False
+#     except Exception as e:
+#         print(f"复制数据到 Excel 时发生错误：{e}")
+#         import traceback
+#         traceback.print_exc()
+#         return False
+
+#
+# def copy_data_to_excel_with_header(data, filename, sheetname, header_name):
+#     """将数据复制到 Excel 文件的指定工作表，包含表头。"""
+#     try:
+#         workbook = openpyxl.load_workbook(filename)
+#         sheet = workbook[sheetname]
+#
+#         # 清空数据，包括表头
+#         # if sheet.max_row >= 1:
+#         #     sheet.delete_rows(1, sheet.max_row)
+#
+#         sheet.cell(row=1, column=1).value = header_name  # 写入表头
+#
+#         if data:
+#             for i, value in enumerate(data):
+#                 sheet.cell(row=i + 2, column=1).value = value
+#
+#         workbook.save(filename)
+#         return True
+#     except FileNotFoundError:
+#         print(f"文件 {filename} 未找到。")
+#         return False
+#     except KeyError:
+#         print(f"工作表 {sheetname} 未找到。")
+#         return False
+#     except Exception as e:
+#         print(f"复制数据到 Excel 时发生错误：{e}")
+#         return False
+
 
 
 def copy_data_to_excel_with_header_split_columns(data, template_filepath, sheet_name, header_name, max_rows_per_column):
@@ -145,9 +202,9 @@ def copy_data_to_excel_with_header_split_columns(data, template_filepath, sheet_
         for i, item in enumerate(data):
             row_index = (i % max_rows_per_column) + 1
             col_index = (i // max_rows_per_column) + 1
-            cell = sheet.cell(row=row_index, column=col_index) # 获取单元格对象
+            cell = sheet.cell(row=row_index, column=col_index)  # 获取单元格对象
             cell.value = item
-            cell.number_format = numbers.FORMAT_TEXT # 设置单元格格式为文本
+            cell.number_format = numbers.FORMAT_TEXT  # 设置单元格格式为文本
 
         wb.save(template_filepath)
         return True
@@ -162,6 +219,38 @@ def copy_data_to_excel_with_header_split_columns(data, template_filepath, sheet_
         import traceback
         traceback.print_exc()
         return False
+# def copy_data_to_excel_with_header_split_columns(data, template_filepath, sheet_name, header_name, max_rows_per_column):
+#     """将数据分列复制到 Excel，包含表头，并清空原有数据（保留表头）。"""
+#     try:
+#         wb = openpyxl.load_workbook(template_filepath)
+#         sheet = wb[sheet_name]
+#
+#         # 清空除表头外的数据
+#         if sheet.max_row > 1:  # 确保有数据需要删除
+#             sheet.delete_rows(2, sheet.max_row)  # 从第二行开始删除，保留表头
+#
+#         sheet.cell(row=1, column=1).value = header_name  # 写入表头
+#
+#         for i, item in enumerate(data):
+#             row_index = (i % max_rows_per_column) + 1
+#             col_index = (i // max_rows_per_column) + 1
+#             cell = sheet.cell(row=row_index, column=col_index) # 获取单元格对象
+#             cell.value = item
+#             cell.number_format = numbers.FORMAT_TEXT # 设置单元格格式为文本
+#
+#         wb.save(template_filepath)
+#         return True
+#     except FileNotFoundError:
+#         print(f"文件 {template_filepath} 未找到。")
+#         return False
+#     except KeyError:
+#         print(f"工作表 {sheet_name} 未找到。")
+#         return False
+#     except Exception as e:
+#         print(f"复制数据到 Excel 时发生错误：{e}")
+#         import traceback
+#         traceback.print_exc()
+#         return False
 
 #
 # def copy_business_numbers_to_excel_with_header_split_columns(data, template_filepath, sheet_name, header_name, max_rows_per_column):

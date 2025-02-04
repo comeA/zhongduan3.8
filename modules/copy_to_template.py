@@ -4,7 +4,7 @@ import openpyxl
 import modules.excel_utils as excel_utils
 
 def copy_business_numbers_to_template(df, template_filepath):
-    """将筛选后的“业务号码”复制到模板文件，分列处理，保留原有表头。"""
+    """将筛选后的“业务号码”复制到模板文件，分列处理，保留原有表头。接入号复制到导入模板"""
     try:
         # 1. 清理 ' 并转换为字符串列表
         df['业务号码'] = df['业务号码'].astype(str).str.replace("^'", "", regex=True)
