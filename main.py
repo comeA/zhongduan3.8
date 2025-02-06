@@ -57,27 +57,36 @@ print(f"Python 解释器路径：{sys.executable}")
 print(f"openpyxl 版本：{openpyxl.__version__}")
 
 def main():
-    print("欢迎使用终端数据处理程序！")
+    print("欢迎使用终端数据处理程序，V4.0版本！")
+    print("—"*40)
+    print("使用前，请先阅读开头的软件使用说明，谢谢")
+    print("—"*40)
 
     # 源文件输入
-    source_folder = get_file_path("请输入源文件所在文件夹路径：")
-    source_filename = get_file_name("请输入源文件名（包含扩展名）：")
+    # source_folder = get_file_path("请输入源文件所在文件夹路径：")
+    # source_filename = get_file_name("请输入源文件名（包含扩展名）：")
+    source_folder = get_file_path("请输入源文件所在文件夹路径(表05终端工单一览表)：")
+    source_filename = get_file_name("请输入源文件名(表05终端工单一览表)（包含扩展名）：")
     source_filepath = os.path.join(source_folder, source_filename)
 
     if not check_file_exists(source_filepath):
         print(f"源文件 {source_filepath} 不存在，程序退出。")
         return
 
-    source_sheet = get_sheet_name("请输入源文件子表名称：")
+    #source_sheet = get_sheet_name("请输入源文件子表名称：")
+    source_sheet = get_sheet_name("请输入源文件(表05终端工单一览表)子表名称：")
 
     # 目标文件输入
-    dest_folder = get_file_path("请输入目标文件所在文件夹路径（可新建）：", check_exists=False)
+    #dest_folder = get_file_path("请输入目标文件所在文件夹路径（可新建）：", check_exists=False)
+    dest_folder = get_file_path("请输入目标文件(终端出库报表)所在文件夹路径（可新建）：", check_exists=False)
     create_directory(dest_folder)
 
-    dest_filename = get_file_name("请输入目标文件名（包含扩展名）：")
+    #dest_filename = get_file_name("请输入目标文件名（包含扩展名）：")
+    dest_filename = get_file_name("请输入目标文件名(终端出库报表)（包含扩展名）：")
     dest_filepath = os.path.join(dest_folder, dest_filename)
 
-    result_sheet = get_sheet_name("请输入目标文件子表名称：")
+    #result_sheet = get_sheet_name("请输入目标文件子表名称：")
+    result_sheet = get_sheet_name("请输入目标文件(终端出库报表)子表名称：")
 
     process_result, filtered_sheet_name, filtered_filepath = process_sn_data(source_filepath, source_sheet, dest_filepath, result_sheet)
 
