@@ -58,6 +58,12 @@ print(f"openpyxl 版本：{openpyxl.__version__}")
 
 def main():
     print("欢迎使用终端数据处理程序，V4.0版本！")
+    print("开发人员： 卢鹤斌")
+    print("软件使用说明：")
+    print("1、该程序所有用到的文件后缀 ， 最好为  .xlsx 格式 ，如遇 .csv格式 请转为 .xlsx格式")
+    print("2、源文件和目标文件路径 问题： 先输入“文件路径” ，在输入 “文件名称” ， 最后输入“文件子表名称”（目标文件的子表名称可以自定义）")
+    print("   dwd_hzluheb_acc_sn_final_pg 文件 问题 ： 先输入“文件路径\文件名称” ，最后在输入“文件子表名称”")
+    print("3、除了 第二点 说到 的路径是分步骤输入外，其他文件的输入请直接 输入 文件路径\文件名称")
     print("—"*40)
     print("使用前，请先阅读开头的软件使用说明，谢谢")
     print("—"*40)
@@ -182,10 +188,28 @@ def main():
                                 print("复制 LOID（SN 码）到 importCPEID2ExportSN.xlsx 失败")
                                 return
 
+                            # 读取 importCPEID2ExportSN.xlsx 文件
+                            sn_df = pd.read_excel(sn_export_filepath, sheet_name="Sheet1", engine='openpyxl')
+
+                            # 去除重复数据
+                            sn_df.drop_duplicates(subset="LOID", inplace=True)  # 根据 LOID 列去重
+
+                            # 保存去重后的数据
+                            sn_df.to_excel(sn_export_filepath, sheet_name="Sheet1", index=False)
+
                             if not copy_data_to_excel_with_header(df['ISCM终端MAC地址'], mac_export_filepath, "Sheet1",
                                                                   "CPEID(OUI和序列号必须填写)"):
                                 print("复制 ISCM 终端 MAC 地址到 importCPEID2ExportMAC.xlsx 失败")
                                 return
+
+                            # 读取 importCPEID2ExportMAC.xlsx 文件
+                            mac_df = pd.read_excel(mac_export_filepath, sheet_name="Sheet1", engine='openpyxl')
+
+                            # 去除重复数据
+                            mac_df.drop_duplicates(subset="CPEID(OUI和序列号必须填写)", inplace=True)  # 根据 CPEID 列去重
+
+                            # 保存去重后的数据
+                            mac_df.to_excel(mac_export_filepath, sheet_name="Sheet1", index=False)
 
                             ##处理 cpeExport 数据并更新终端出库报表 (移到这里)
                             continue_cpe_processing = get_yes_no_input("是否继续处理目前在用型号2？(y/n): ")
