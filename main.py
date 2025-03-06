@@ -22,6 +22,7 @@ import os
 import pandas as pd
 import openpyxl
 import sys
+from openpyxl import load_workbook
 
 # 导入各个模块，并使用别名
 import modules.excel_utils as excel_utils
@@ -52,6 +53,8 @@ process_sn_data = sn_data_process.process_sn_data
 sort_and_save_sn_data = sn_data_process.sort_and_save_sn_data
 perform_vlookup_correct = vlookup_module.perform_vlookup_correct
 insert_columns_func = insert_columns.insert_columns  # 修改变量名，避免与模块名冲突
+perform_mac_status_vlookup = vlookup_module.perform_mac_status_vlookup
+perform_simplified_model_vlookup = vlookup_module.perform_simplified_model_vlookup
 
 print(f"Python 解释器路径：{sys.executable}")
 print(f"openpyxl 版本：{openpyxl.__version__}")
@@ -59,10 +62,10 @@ print(f"openpyxl 版本：{openpyxl.__version__}")
 def main():
     print("欢迎使用终端数据处理程序，V4.0版本！")
     print("开发人员： 卢鹤斌")
-    print("软件使用说明：")
+    print("软件使用说明-重要：")
     print("1、该程序所有用到的文件后缀 ， 最好为  .xlsx 格式 ，如遇 .csv格式 请转为 .xlsx格式")
     print("2、源文件和目标文件路径 问题： 先输入“文件路径” ，在输入 “文件名称” ， 最后输入“文件子表名称”（目标文件的子表名称可以自定义）")
-    print("   dwd_hzluheb_acc_sn_final_pg 文件 问题 ： 先输入“文件路径\文件名称” ，最后在输入“文件子表名称”")
+    print("dwd_hzluheb_acc_sn_final_pg 文件 问题 ： 先输入“文件路径\文件名称” ，最后在输入“文件子表名称”")
     print("3、除了 第二点 说到 的路径是分步骤输入外，其他文件的输入请直接 输入 文件路径\文件名称")
     print("—"*40)
     print("使用前，请先阅读开头的软件使用说明，谢谢")
@@ -71,8 +74,8 @@ def main():
     # 源文件输入
     # source_folder = get_file_path("请输入源文件所在文件夹路径：")
     # source_filename = get_file_name("请输入源文件名（包含扩展名）：")
-    source_folder = get_file_path("请输入源文件所在文件夹路径(表05终端工单一览表)：")
-    source_filename = get_file_name("请输入源文件名(表05终端工单一览表)（包含扩展名）：")
+    source_folder = get_file_path("请输入源文件所在文件夹路径(表600终端工单清单)：")
+    source_filename = get_file_name("请输入源文件名(表600终端工单清单)（包含扩展名）：")
     source_filepath = os.path.join(source_folder, source_filename)
 
     if not check_file_exists(source_filepath):
@@ -80,7 +83,7 @@ def main():
         return
 
     #source_sheet = get_sheet_name("请输入源文件子表名称：")
-    source_sheet = get_sheet_name("请输入源文件(表05终端工单一览表)子表名称：")
+    source_sheet = get_sheet_name("请输入源文件(表600终端工单清单)子表名称：")
 
     # 目标文件输入
     #dest_folder = get_file_path("请输入目标文件所在文件夹路径（可新建）：", check_exists=False)
@@ -128,8 +131,8 @@ def main():
         continue_processing = get_yes_no_input("是否继续处理“业务号码-LOID（SN 码）”数据？(y/n): ")
 
         if continue_processing == 'y':
-            sn_data_filepath = get_file_path("请输入“业务号码-LOID（SN 码）”数据文件路径：")
-            sn_sheet = get_sheet_name("请输入“业务号码-LOID（SN 码）”文件子表名称：")
+            sn_data_filepath = get_file_path("请输入“业务号码-LOID（SN 码）”数据文件路径(dwd_hzluheb_acc_sn_final_pg_开头)：")
+            sn_sheet = get_sheet_name("请输入“业务号码-LOID（SN 码）”文件子表名称(dwd_hzluheb_acc_sn_final_pg_202)：")
 
             if not (sn_data_filepath.lower().endswith((".txt", ".xls", ".xlsx"))):
                 print("不支持的文件类型，请选择 txt 或 Excel 文件")
@@ -210,11 +213,22 @@ def main():
 
                             # 保存去重后的数据
                             mac_df.to_excel(mac_export_filepath, sheet_name="Sheet1", index=False)
+#原来的代码
+                            # if not copy_data_to_excel_with_header(df['LOID（SN码）'], sn_export_filepath, "Sheet1",
+                            #                                       "LOID"):
+                            #     print("复制 LOID（SN 码）到 importCPEID2ExportSN.xlsx 失败")
+                            #     return
+                            #
+                            # if not copy_data_to_excel_with_header(df['ISCM终端MAC地址'], mac_export_filepath, "Sheet1",
+                            #                                       "CPEID(OUI和序列号必须填写)"):
+                            #     print("复制 ISCM 终端 MAC 地址到 importCPEID2ExportMAC.xlsx 失败")
+                            #     return
+# 原来的代码截止
 
-                            ##处理 cpeExport 数据并更新终端出库报表 (移到这里)
+                            ##处理 cpeExport_sn 数据并更新终端出库报表 (移到这里)
                             continue_cpe_processing = get_yes_no_input("是否继续处理目前在用型号2？(y/n): ")
                             if continue_cpe_processing == 'y':
-                                cpe_export_filepath = get_file_path("请输入 cpeExport 文件路径：")
+                                cpe_export_filepath = get_file_path("请输入 cpeExport_sn 文件路径匹配：")
                                 if cpe_processing.process_cpe_export_data(cpe_export_filepath):
                                     print("cpeExport 数据处理成功！")
                                 else:
@@ -227,7 +241,104 @@ def main():
                             else:
                                 print("跳过处理目前在用型号2的操作。")
 
-                            ##处理 cpeExport 数据并更新终端出库报表 (移到这里)
+                            ##处理 cpeExport_sn 数据并更新终端出库报表 (移到这里)
+                            # 询问用户是否继续处理“ISCM终端MAC地址-注册状态”
+                            continue_mac_status = get_yes_no_input("是否继续处理 ISCM终端MAC地址-注册状态？(y/n): ")
+
+                            if continue_mac_status == 'y':
+                                # 获取 cpeExport_mac.xlsx 文件路径
+                                cpe_mac_filepath = get_file_path("请输入 cpeExport_mac.xlsx 文件路径：")
+
+                                # 检查文件是否存在
+                                if not check_file_exists(cpe_mac_filepath):
+                                    print(f"文件 {cpe_mac_filepath} 不存在，程序退出。")
+                                    return
+
+                                # 读取目标文件的当前子表
+                                try:
+                                    target_df = pd.read_excel(filtered_filepath, sheet_name=filtered_sheet_name,
+                                                              engine='openpyxl')
+                                except Exception as e:
+                                    print(f"读取目标文件 {filtered_filepath} 失败：{e}")
+                                    return
+
+                                # 检查目标文件中是否存在“ISCM终端MAC地址”字段
+                                if "ISCM终端MAC地址" not in target_df.columns:
+                                    print("目标文件中缺少“ISCM终端MAC地址”字段，无法执行 VLOOKUP。")
+                                    return
+
+                                # 执行 VLOOKUP 操作
+                                try:
+                                    # 调用新的VLOOKUP函数
+                                    target_df = perform_mac_status_vlookup(target_df, cpe_mac_filepath)
+
+                                    if target_df is not None:
+                                        # 保存更新后的数据到目标文件
+                                        updated_sheet_name = filtered_sheet_name + "_更新注册状态"
+                                        with pd.ExcelWriter(filtered_filepath, engine='openpyxl', mode='a',
+                                                            if_sheet_exists='replace') as writer:
+                                            target_df.to_excel(writer, sheet_name=updated_sheet_name, index=False)
+
+                                        print(
+                                            f"“ISCM终端MAC地址-注册状态”字段已成功更新并保存到 {filtered_filepath} 的 {updated_sheet_name} 工作表中。")
+                                    else:
+                                        print("VLOOKUP 操作失败。请检查源数据和 MAC 地址数据是否包含所有必需的列。")
+                                        return
+                                except Exception as e:
+                                    print(f"执行 VLOOKUP 操作失败：{e}")
+                                    return
+
+
+                            #更新“精简型号”字段
+                            # 询问用户是否继续处理“精简型号”字段
+                            continue_simplified_model = get_yes_no_input("是否继续处理“精简型号”字段？(y/n): ")
+
+                            if continue_simplified_model == 'y':
+                                # 获取终端型号精简6.xlsx文件路径
+                                simplified_model_filepath = get_file_path("请输入终端型号精简6.xlsx文件路径：")
+
+                                # 检查文件是否存在
+                                if not check_file_exists(simplified_model_filepath):
+                                    print(f"文件 {simplified_model_filepath} 不存在，程序退出。")
+                                    return
+
+                                # 读取目标文件的当前子表
+                                try:
+                                    target_df = pd.read_excel(filtered_filepath, sheet_name=updated_sheet_name,
+                                                              engine='openpyxl')
+                                except Exception as e:
+                                    print(f"读取目标文件 {filtered_filepath} 失败：{e}")
+                                    return
+
+                                # 检查目标文件中是否存在“设备名称”字段
+                                if "设备名称" not in target_df.columns:
+                                    print("目标文件中缺少“设备名称”字段，无法执行 VLOOKUP。")
+                                    return
+
+                                # 执行 VLOOKUP 操作
+                                try:
+                                    # 调用新的VLOOKUP函数
+                                    target_df = perform_simplified_model_vlookup(target_df, simplified_model_filepath)
+
+                                    if target_df is not None:
+                                        # 保存更新后的数据到目标文件
+                                        updated_sheet_name = updated_sheet_name + "_更新精简型号"
+                                        with pd.ExcelWriter(filtered_filepath, engine='openpyxl', mode='a',
+                                                            if_sheet_exists='replace') as writer:
+                                            target_df.to_excel(writer, sheet_name=updated_sheet_name, index=False)
+
+                                        print(f"“精简型号”字段已成功更新并保存到 {filtered_filepath} 的 {updated_sheet_name} 工作表中。")
+                                    else:
+                                        print("VLOOKUP 操作失败。请检查源数据和终端型号精简数据是否包含所有必需的列。")
+                                        return
+                                except Exception as e:
+                                    print(f"执行 VLOOKUP 操作失败：{e}")
+                                    return
+                            else:
+                                print("跳过处理“精简型号”字段的操作。")
+
+
+
 
                         except Exception as e:
                             print(f"保存匹配结果到目标文件时发生错误：{e}")

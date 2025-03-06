@@ -16,6 +16,7 @@
 '''
 
 import pandas as pd
+import re
 
 def perform_vlookup_correct(df, sn_df):
     """执行正确的 VLOOKUP 操作，考虑数据类型转换和重复键问题"""
@@ -43,6 +44,113 @@ def perform_vlookup_correct(df, sn_df):
     except Exception as e:
         print(f"VLOOKUP 过程中发生错误：{e}")
         return None
+
+
+
+
+
+def perform_mac_status_vlookup(df, mac_export_filepath):
+    """根据ISCM终端MAC地址字段匹配cpeExport_mac20250303.xlsx表中的终端唯一标识，并填充终端注册状态"""
+    try:
+        # 读取cpeExport_mac20250303.xlsx文件
+        mac_df = pd.read_excel(mac_export_filepath, sheet_name="sheet", engine='openpyxl')
+
+        # 强制转换为字符串类型
+        df['ISCM终端MAC地址'] = df['ISCM终端MAC地址'].astype(str)
+        mac_df['终端唯一标识'] = mac_df['终端唯一标识'].astype(str)
+
+        # 执行VLOOKUP操作
+        df = pd.merge(df, mac_df[['终端唯一标识', '终端注册状态']], left_on='ISCM终端MAC地址', right_on='终端唯一标识', how='left')
+
+        # 将匹配到的终端注册状态赋值给新列
+        df['ISCM终端MAC地址-注册状态'] = df['终端注册状态']
+        df.drop(columns=['终端唯一标识', '终端注册状态'], inplace=True)
+
+        return df
+    except KeyError as e:
+        print(f"KeyError: 缺少列：{e}")
+        return None
+    except Exception as e:
+        print(f"VLOOKUP 过程中发生错误：{e}")
+        return None
+
+#
+# def perform_simplified_model_vlookup(df, simplified_model_filepath):
+#     """根据设备名称字段匹配终端型号精简6.xlsx表中的终端型号，并填充精简型号字段"""
+#     try:
+#         # 读取终端型号精简6.xlsx文件
+#         #simplified_model_df = pd.read_excel(simplified_model_filepath, sheet_name="Sheet1", engine='openpyxl')
+#         simplified_model_df = pd.read_excel(simplified_model_filepath, sheet_name="Sheet2 (2)仅修改HN8145V", engine='openpyxl')
+#
+#         # 强制转换为字符串类型
+#         df['设备名称'] = df['设备名称'].astype(str)
+#         simplified_model_df['终端型号'] = simplified_model_df['终端型号'].astype(str)
+#
+#         # 执行VLOOKUP操作
+#         #df = pd.merge(df, simplified_model_df[['终端型号', '精简型号']], left_on='设备名称', right_on='终端型号', how='left')
+#         df = pd.merge(df, simplified_model_df[['终端型号', '精简型号2']], left_on='设备名称', right_on='终端型号', how='left')
+#
+#         # # 将匹配到的精简型号赋值给新列
+#         # df['精简型号'] = df['精简型号2']
+#         # df.drop(columns=['终端型号', '精简型号2'], inplace=True)
+#         df['精简型号'] = df['精简型号2']  # 将 "精简型号2" 的值赋给 "精简型号"
+#         df.drop(columns=['终端型号', '精简型号2'], inplace=True)  # 删除不需要的列
+#
+#
+#         return df
+#     except KeyError as e:
+#         print(f"KeyError: 缺少列：{e}")
+#         return None
+#     except Exception as e:
+#         print(f"VLOOKUP 过程中发生错误：{e}")
+#         return None
+
+
+def perform_simplified_model_vlookup(df, simplified_model_filepath):
+    """根据设备名称字段匹配终端型号精简6.xlsx表中的终端型号，并填充精简型号字段"""
+    try:
+        # 读取终端型号精简6.xlsx文件
+        simplified_model_df = pd.read_excel(simplified_model_filepath, sheet_name="Sheet2 (2)仅修改HN8145V", engine='openpyxl')
+
+        # 彻底清理列名：去除所有非汉字和字母数字字符
+        simplified_model_df.columns = [
+            re.sub(r'[^\w\u4e00-\u9fff]', '', col.strip())
+            for col in simplified_model_df.columns
+        ]
+
+        # 验证列名是否存在
+        required_columns = ['终端型号', '精简型号2']
+        if not all(col in simplified_model_df.columns for col in required_columns):
+            missing = [col for col in required_columns if col not in simplified_model_df.columns]
+            print(f"错误：数据表中缺少关键列 {missing}")
+            return None
+
+        # 强制转换为字符串类型并去除空格
+        df['设备名称'] = df['设备名称'].astype(str).str.strip()
+        simplified_model_df['终端型号'] = simplified_model_df['终端型号'].astype(str).str.strip()
+
+        # 执行 VLOOKUP 操作
+        df = pd.merge(
+            df,
+            simplified_model_df[['终端型号', '精简型号2']],
+            left_on='设备名称',
+            right_on='终端型号',
+            how='left'
+        )
+
+        # 填充新列并删除冗余列
+        df['精简型号'] = df['精简型号2'].fillna('')  # 处理空值
+        df.drop(columns=['终端型号', '精简型号2'], inplace=True, errors='ignore')  # 安全删除列
+
+        return df
+    except KeyError as e:
+        print(f"KeyError: {e}")
+        return None
+    except Exception as e:
+        print(f"VLOOKUP 失败：{e}")
+        return None
+
+
 
 # def perform_vlookup_correct(df_target, df_lookup):
 #     """
