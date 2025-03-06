@@ -17,6 +17,21 @@
 
 import pandas as pd
 import re
+# import modules.truncate_sheet_name as process_data
+
+
+# 定义 truncate_sheet_name 函数
+def truncate_sheet_name(sheet_name, max_length=31):
+    """
+    截断工作表名称，确保其长度不超过 max_length 个字符。
+    :param sheet_name: 原始工作表名称
+    :param max_length: 最大允许长度（默认为 31）
+    :return: 截断后的工作表名称
+    """
+    if len(sheet_name) > max_length:
+        return sheet_name[:max_length]
+    return sheet_name
+
 
 def perform_vlookup_correct(df, sn_df):
     """执行正确的 VLOOKUP 操作，考虑数据类型转换和重复键问题"""
@@ -105,31 +120,133 @@ def perform_mac_status_vlookup(df, mac_export_filepath):
 #         print(f"VLOOKUP 过程中发生错误：{e}")
 #         return None
 
+# #以下这个perform_simplified_model_vlookup 可以实现功能，但是会有点报错
+# def perform_simplified_model_vlookup(df, simplified_model_filepath):
+#     """根据设备名称字段匹配终端型号精简6.xlsx表中的终端型号，并填充精简型号字段"""
+#     try:
+#         # 读取终端型号精简6.xlsx文件
+#         simplified_model_df = pd.read_excel(simplified_model_filepath, sheet_name="Sheet2 (2)仅修改HN8145V", engine='openpyxl')
+#
+#         # 彻底清理列名：去除所有非汉字和字母数字字符
+#         simplified_model_df.columns = [
+#             re.sub(r'[^\w\u4e00-\u9fff]', '', col.strip())
+#             for col in simplified_model_df.columns
+#         ]
+#
+#         # 验证列名是否存在
+#         required_columns = ['终端型号', '精简型号2']
+#         if not all(col in simplified_model_df.columns for col in required_columns):
+#             missing = [col for col in required_columns if col not in simplified_model_df.columns]
+#             print(f"错误：数据表中缺少关键列 {missing}")
+#             return None
+#
+#         # 强制转换为字符串类型并去除空格
+#         df['设备名称'] = df['设备名称'].astype(str).str.strip()
+#         simplified_model_df['终端型号'] = simplified_model_df['终端型号'].astype(str).str.strip()
+#
+#         # 执行 VLOOKUP 操作
+#         df = pd.merge(
+#             df,
+#             simplified_model_df[['终端型号', '精简型号2']],
+#             left_on='设备名称',
+#             right_on='终端型号',
+#             how='left'
+#         )
+#
+#         # 填充新列并删除冗余列
+#         df['精简型号'] = df['精简型号2'].fillna('')  # 处理空值
+#         df.drop(columns=['终端型号', '精简型号2'], inplace=True, errors='ignore')  # 安全删除列
+#
+#         return df
+#     except KeyError as e:
+#         print(f"KeyError: {e}")
+#         return None
+#     except Exception as e:
+#         print(f"VLOOKUP 失败：{e}")
+#         return None
+
+
+
+
+
+# def perform_simplified_model_vlookup(df, simplified_model_filepath):
+#     try:
+#         # 读取终端型号精简6.xlsx文件
+#         simplified_model_df = pd.read_excel(simplified_model_filepath, sheet_name="Sheet2 (2)仅修改HN8145V", engine='openpyxl')
+#
+#         # 彻底清理列名：去除所有非汉字和字母数字字符
+#         simplified_model_df.columns = [
+#             re.sub(r'[^\w\u4e00-\u9fff]', '', col.strip())
+#             for col in simplified_model_df.columns
+#         ]
+#
+#         # 验证列名是否存在
+#         required_columns = ['终端型号', '精简型号2']
+#         if not all(col in simplified_model_df.columns for col in required_columns):
+#             missing = [col for col in required_columns if col not in simplified_model_df.columns]
+#             print(f"错误：数据表中缺少关键列 {missing}")
+#             return None
+#
+#         # 强制转换为字符串类型并去除空格
+#         df['设备名称'] = df['设备名称'].astype(str).str.strip()
+#         simplified_model_df['终端型号'] = simplified_model_df['终端型号'].astype(str).str.strip()
+#
+#         # 执行 VLOOKUP 操作
+#         df = pd.merge(
+#             df,
+#             simplified_model_df[['终端型号', '精简型号2']],
+#             left_on='设备名称',
+#             right_on='终端型号',
+#             how='left'
+#         )
+#
+#         # 填充新列并删除冗余列
+#         df['精简型号'] = df['精简型号2'].fillna('')  # 处理空值
+#         df.drop(columns=['终端型号', '精简型号2'], inplace=True, errors='ignore')  # 安全删除列
+#
+#         # 保存更新后的数据到目标文件
+#         updated_sheet_name = truncate_sheet_name(filtered_sheet_name + "_更新精简型号")
+#         with pd.ExcelWriter(filtered_filepath, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+#             df.to_excel(writer, sheet_name=updated_sheet_name, index=False)
+#
+#         print(f"“精简型号”字段已成功更新并保存到 {filtered_filepath} 的 {updated_sheet_name} 工作表中。")
+#         return df
+#     except KeyError as e:
+#         print(f"KeyError: {e}")
+#         return None
+#     except Exception as e:
+#         print(f"VLOOKUP 失败：{e}")
+#         return None
+# vlookup_module.py 修改后的函数
 
 def perform_simplified_model_vlookup(df, simplified_model_filepath):
     """根据设备名称字段匹配终端型号精简6.xlsx表中的终端型号，并填充精简型号字段"""
     try:
         # 读取终端型号精简6.xlsx文件
-        simplified_model_df = pd.read_excel(simplified_model_filepath, sheet_name="Sheet2 (2)仅修改HN8145V", engine='openpyxl')
+        simplified_model_df = pd.read_excel(
+            simplified_model_filepath,
+            sheet_name="Sheet2 (2)仅修改HN8145V",
+            engine='openpyxl'
+        )
 
-        # 彻底清理列名：去除所有非汉字和字母数字字符
+        # 清理列名
         simplified_model_df.columns = [
             re.sub(r'[^\w\u4e00-\u9fff]', '', col.strip())
             for col in simplified_model_df.columns
         ]
 
-        # 验证列名是否存在
+        # 验证必需列是否存在
         required_columns = ['终端型号', '精简型号2']
         if not all(col in simplified_model_df.columns for col in required_columns):
             missing = [col for col in required_columns if col not in simplified_model_df.columns]
             print(f"错误：数据表中缺少关键列 {missing}")
             return None
 
-        # 强制转换为字符串类型并去除空格
+        # 标准化数据
         df['设备名称'] = df['设备名称'].astype(str).str.strip()
         simplified_model_df['终端型号'] = simplified_model_df['终端型号'].astype(str).str.strip()
 
-        # 执行 VLOOKUP 操作
+        # 执行VLOOKUP
         df = pd.merge(
             df,
             simplified_model_df[['终端型号', '精简型号2']],
@@ -138,16 +255,14 @@ def perform_simplified_model_vlookup(df, simplified_model_filepath):
             how='left'
         )
 
-        # 填充新列并删除冗余列
-        df['精简型号'] = df['精简型号2'].fillna('')  # 处理空值
-        df.drop(columns=['终端型号', '精简型号2'], inplace=True, errors='ignore')  # 安全删除列
+        # 处理合并结果
+        df['精简型号'] = df['精简型号2'].fillna('')
+        df.drop(columns=['终端型号', '精简型号2'], inplace=True, errors='ignore')
 
-        return df
-    except KeyError as e:
-        print(f"KeyError: {e}")
-        return None
+        return df  # 只返回处理后的DataFrame，不处理保存操作
+
     except Exception as e:
-        print(f"VLOOKUP 失败：{e}")
+        print(f"处理精简型号时发生错误：{e}")
         return None
 
 

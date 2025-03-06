@@ -21,7 +21,8 @@ from openpyxl.styles import numbers
 
 import openpyxl
 from openpyxl.styles import numbers
-
+# import modules.truncate_sheet_name as truncate_sheet_name
+from modules.truncate_sheet_name import truncate_sheet_name
 
 def copy_data_to_excel(data, template_filepath, sheet_name, header_row=1):  # 添加 header_row 参数
     """将数据复制到 Excel 文件的指定工作表，保留表头。"""
@@ -124,9 +125,16 @@ def copy_data_to_excel(data, template_filepath, sheet_name, header_row=1):  # �
 # #这个copy_data_to_excel_with_header是sn码和mac码复制到对应的文件
 def copy_data_to_excel_with_header(data, filename, sheetname, header_name):
     """将数据复制到 Excel 文件的指定工作表，包含表头，并清空原有数据（除了表头）。"""
+    # try:
+    #     workbook = openpyxl.load_workbook(filename)
+    #     sheet = workbook[sheetname]
     try:
         workbook = openpyxl.load_workbook(filename)
-        sheet = workbook[sheetname]
+        sheetname = truncate_sheet_name(sheetname)  # 截断工作表名称
+        if sheetname in workbook.sheetnames:
+            sheet = workbook[sheetname]
+        else:
+            sheet = workbook.create_sheet(sheetname)
 
         # 清空除表头外的数据
         if sheet.max_row > 1:  # 确保有数据需要删除
